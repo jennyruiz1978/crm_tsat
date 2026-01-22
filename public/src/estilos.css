@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer .bg-infomalaga {
+    body {
+        background-image: url('../img/bg-infomalaga.jpg');
+    }
+}
