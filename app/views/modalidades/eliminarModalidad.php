@@ -1,0 +1,39 @@
+<div class="hidden overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none justify-center items-center" id="eliminar-modalidad">
+  <div class="relative w-auto my-6 mx-auto max-w-3xl">
+    <!--content-->
+    <div class="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-white outline-none focus:outline-none">
+      <!--header-->
+      <div class="flex items-start justify-between px-5 py-3 border-b border-solid border-blueGray-200 rounded-t">
+        <h3 class="text-base font-semibold mr-2">
+          Eliminar modalidad
+        </h3>
+        <button class="ml-auto bg-transparent border-0 text-black opacity-50 float-right text-3xl leading-none font-semibold outline-none focus:outline-none cerrarModalEliminarrModalidad" >
+          <span class="bg-transparent text-black opacity-1 h-6 w-6 text-2xl block outline-none focus:outline-none">
+            ×
+          </span>
+        </button>
+      </div>
+
+      <form method="POST" action="<?php echo RUTA_URL; ?>/Modalidades/eliminarModalidad">    
+        <!--body-->
+        <div class="relative p-3 flex-auto">                          
+          <span id="msgIniciar" class="font-bold font-bold text-pink-600"></span>
+          
+            <input type="hidden" id="idModalidadDel" name="idModalidadDel">                                                   
+            <h3 class="text-base font-semibold mr-2" id="preguntaEliminar"></h3>
+                
+          
+        </div>
+        
+        <!--footer-->
+        <div class="flex items-center justify-end p-6 border-t border-solid border-blueGray-200 rounded-b">
+          <button class="w-auto bg-gray-500 hover:bg-gray-700 rounded-lg shadow-xl font-medium text-white px-4 py-2 mr-2 cerrarModalEliminarrModalidad">Cerrar</button>
+          <button type="submit" id="eliminarModalidad" class="w-auto bg-violeta-oscuro hover:bg-blue-700 rounded-lg shadow-xl font-medium text-white px-4 py-2">Sí</button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+</div>
+<div class="hidden opacity-25 fixed inset-0 z-40 bg-black" id="eliminar-modalidad-backdrop"></div>

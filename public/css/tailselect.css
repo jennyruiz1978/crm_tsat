@@ -1,0 +1,10 @@
+/*sobreescribo la clase tailselect por defecto*/
+.tail-select {
+  width: 100%;
+  border-width: 2px;
+  border-radius: 0.5rem;
+  margin-top: 0.25rem;  
+  line-height: inherit;
+  color: inherit;
+  border-color: rgba(229, 231, 235, var(--tw-border-opacity));
+}

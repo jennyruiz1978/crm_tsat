@@ -1,0 +1,9 @@
+//import "../laboratorio/componentes/ps-boton.js";
+import "./componentes/ps-boton.js";
+import "./componentes/ps-boton2.js";
+import "./componentes/grafico-prueba.js";
+import "./componentes/dlm-ejemplo.js";
+import "./componentes/dlm-visible.js";
+import "./componentes/dlm-tabla.js";
+import "./componentes/dlm-tipo.js";
+import "./componentes/dlm-hoy.js";
