@@ -179,43 +179,43 @@ class ModeloIncidencias{
         return implode(', ', $parts);
     }
 
-    public function obtenerIncidenciasConOrdenMultiple($filas, $ordenMultipleJson, $filaspagina, $tipoOrden, $cond)
-    {
-        $sql = "SELECT 
-                    inc.id as 'Nº',
-                    DATE_FORMAT(inc.creacion , '%d/%m/%Y', 'es_ES') AS 'Creación',
-                    CONCAT(usu.nombre, ' ', usu.apellidos) AS 'Usuario',
-                    cli.nombre AS 'Cliente',
-                    suc.nombre AS 'Sucursal',
-                    equ.nombre AS 'Equipo',
-                    IF(inc.estado = 1, 'pendiente',
-                        IF(inc.estado = 2, 'en curso',
-                            IF(inc.estado = 3 AND inc.validarcliente = 0, 'terminadasinvalorar', 'terminada')
-                        )
-                    ) AS 'Estado',
-                    inc.nombrestecnicos AS 'Técnicos',
-                    IF(moda.valor > 0, 'horas', '') AS 'verhorascliente'
-                FROM incidencias inc
-                LEFT JOIN usuarios usu ON inc.idusuario = usu.id
-                LEFT JOIN clientes cli ON inc.idcliente = cli.id
-                LEFT JOIN sucursales suc ON inc.sucursal = suc.id
-                LEFT JOIN equipos equ ON inc.idequipo = equ.id
-                LEFT JOIN modalidadhoras moda 
-                    ON MONTH(inc.creacion) = moda.mes 
-                    AND YEAR(inc.creacion) = moda.anio 
-                    AND inc.idcliente = moda.idcliente
-                WHERE inc.activo = 1 $cond
-                ORDER BY ". $ordenMultipleJson ."  
-                LIMIT $filaspagina, $filas";
+    public function obtenerIncidenciasConOrdenMultiple($filas, $orden, $filaspagina, $tipoOrden, $cond) {
+        $this->db->query("SELECT 
+                inc.id as 'Nº', 
+                DATE_FORMAT(inc.creacion , '%d/%m/%Y', 'es_ES') AS 'Creación', 
+                CONCAT(usu.nombre, ' ', usu.apellidos) AS 'Usuario',
+                CONCAT(cli.nombre, ' ', cli.nombrecomercial) AS 'Cliente', 
+                suc.nombre AS 'Sucursal',
+                equ.nombre AS 'Equipo', 
+                IF(inc.estado=1,'pendiente',
+                    IF(inc.estado=2,'en curso',
+                        IF(inc.estado=3 AND inc.validarcliente =0,'terminadasinvalorar','terminada')
+                    )
+                ) AS 'Estado',
+                inc.nombrestecnicos as 'Técnicos',
+                inc.play AS 'Atención',         
+                inc.nomestadofactppto AS 'Fact/Ppto',       
+                IF(inc.fechahora IS NULL, '', 
+                DATE_FORMAT(inc.fechahora, '%d-%m-%Y %H:%i')) AS 'Agendado', 
+                IF(moda.valor>0,'horas','') AS 'verhorascliente'
+            FROM incidencias inc
+            LEFT JOIN usuarios usu ON inc.idusuario = usu.id
+            LEFT JOIN clientes cli ON inc.idcliente = cli.id
+            LEFT JOIN sucursales suc ON inc.sucursal = suc.id
+            LEFT JOIN equipos equ ON inc.idequipo = equ.id 
+            LEFT JOIN modalidadhoras moda ON MONTH(inc.creacion) = moda.mes 
+                AND YEAR(inc.creacion) = moda.anio 
+                AND inc.idcliente = moda.idcliente            
+            WHERE inc.activo = 1 $cond
+            ORDER BY " . $orden . "  
+            LIMIT $filaspagina, $filas");
+            /*echo "mi consulta <br><br>";
+            print_r($sql);*/
 
-/*echo "mi consulta <br><br>";
-       print_r($sql);*/
-        $this->db->query($sql);
-        return $this->db->registros();
-
-        
+        $resultado = $this->db->registros();
+        return $resultado;
     }
-    
+
     public function obtenerTodasSucursalesPorCliente($id)
     {
         $this->db->query("SELECT * FROM sucursales WHERE activo =1 AND idcliente= '$id' ");

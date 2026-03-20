@@ -365,6 +365,7 @@ class Incidencias extends Controlador {
             'Estado'      => 'inc.estado',
             'Técnicos'    => 'inc.nombrestecnicos',
             'Fact/Ppto'   => 'inc.nomestadofactppto',
+            'Agendado'    => "DATE_FORMAT(inc.fechahora, '%Y/%m/%d', 'es_ES')",
             // Agrega todos los que sean necesarios
         ];
         return $mapa[$campoVisible] ?? $campoVisible; // si no está mapeado, se usa el mismo 
@@ -373,13 +374,15 @@ class Incidencias extends Controlador {
     private function mapearCampoOrdenMultiple($campoVisible) {
         $mapa = [
             'Nº'          => 'inc.id',
-            'Creación'    => "DATE_FORMAT(inc.creacion, '%Y/%m/%d', 'es_ES')",  // ← Solo aquí aplicamos el formateo
+            'Creación'    => "DATE_FORMAT(inc.creacion, '%Y/%m/%d', 'es_ES')",  
             'Usuario'     => "CONCAT(usu.nombre, ' ', usu.apellidos)",
             'Cliente'     => "CONCAT(cli.nombre, ' ', cli.nombrecomercial)",
             'Sucursal'    => 'suc.nombre',
             'Equipo'      => 'equ.nombre',
             'Estado'      => 'inc.estado',
             'Técnicos'    => 'inc.nombrestecnicos',
+            'Fact/Ppto'   => 'inc.nomestadofactppto',
+            'Agendado'    => "DATE_FORMAT(inc.fechahora, '%Y/%m/%d', 'es_ES')",
             // Añade otros campos visibles si existen
         ];
         return $mapa[$campoVisible] ?? $campoVisible;
@@ -405,6 +408,7 @@ class Incidencias extends Controlador {
                 $cond .= $this->construirCondicionesBuscar($datos);
             }
 
+            //$incidencias = $this->ModelIncidencias->obtenerIncidenciasTablaClassBuscar($filas, $clausulaOrder, $filaspagina, $tipoSimple, $cond);
             $incidencias = $this->ModelIncidencias->obtenerIncidenciasConOrdenMultiple($filas, $clausulaOrder, $filaspagina, $tipoSimple, $cond);
             print(json_encode($incidencias));
         }

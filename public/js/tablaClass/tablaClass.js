@@ -173,13 +173,17 @@ export class creartabla {
                             } else if (datos[i][titulos[j]] == 'en curso') {
                                 nombreEstado = 'en curso'; claseTd = 'font-bold text-white bg-yellow-400 text-center border rounded-lg p-1';
                             } else if (datos[i][titulos[j]] == 'terminada' || datos[i][titulos[j]] == 'terminadasinvalorar') {
-                                nombreEstado = 'terminada'; claseTd = 'font-bold text-white bg-green-600 text-center border rounded-lg p-1';
-                            }
+                                nombreEstado = 'terminada'; 
+                                claseTd = 'font-bold text-white bg-green-600 text-center border rounded-lg p-1';
+                            }                            
                             contenido += `\n                                        <td class="px-1 py-2 border-b border-gray-200 bg-white text-xs 3xl:text-sm"><div class="${claseTd}">${nombreEstado}</div></td>`;
                         } else if (titulos[j] == 'Fact/Ppto') {
-                            let claseTdFact = ""; let nombreEstado = datos[i][titulos[j]]; let colortexto = '';
+                            let claseTdFact = ""; 
+                            let nombreEstado = datos[i][titulos[j]]; 
+                            let colortexto = '';
                             if (['facturar','presupuestar','aceptado','presupuestado','facturado','rechazado','FParc'].indexOf(datos[i][titulos[j]]) >= 0) {
-                                colortexto = 'text-white'; claseTdFact = ` ${datos[i][titulos[j]]} border rounded-lg p-1`;
+                                colortexto = 'text-white'; 
+                                claseTdFact = ` ${datos[i][titulos[j]]} border rounded-lg p-1`;
                             } else if (datos[i][titulos[j]] == 'sin estado') nombreEstado = '';
                             contenido += `\n                                    <td class="px-1 py-2 border-b border-gray-200 bg-white text-xs 3xl:text-sm">\n                                        <div class="${claseTdFact} text-center clickestado font-bold ${colortexto}" data-tipo=${datos[i][titulos[j]]}>${nombreEstado}</div>\n                                    </td>`;
                         } else if (titulos[j] == 'Atención' || titulos[j] == 'verhorascliente' || titulos[j] == 'idTecnico' || titulos[j] == 'idusuario' || titulos[j] == 'pktabla') {
@@ -195,6 +199,9 @@ export class creartabla {
                             if (boton[x] == 'pdffacturafila') contenido += `<a class="mr-1 pdffila text-gray-500 cursor-pointer" title="PDF" data-index="${datos[i]['Nº']}"><i class="fa fa-file-pdf" style="font-size: 1.25rem;"></i></a>`;
                             if (boton[x] == 'editar') contenido += `<a href="" class="mr-1 editar" title="Editar"><i class="fas fa-edit mr-1 fill-current text-yellow-500 text-sm lg:text-xl"></i></a>`;
                             if (boton[x] == 'ver') contenido += `\n                                    <div class=""><form action="${rutaApp}" method="POST" title="ver">\n                                    <input type="number" class="hidden" name="id" value="${datos[i]['Nº']}">\n                                    <button type="submit" class="btnActualizar"><i class="fas fa-eye mr-1 fill-current text-yellow-500 text-sm lg:text-xl"></i></button>\n                                    </form></div>`;
+                            if (boton[x] == 'cambiarestadofactura') {
+                                    contenido += `<a href="" class="cambiarestadofactura" title="Cambiar estado"><i class="fas fa-comment-dollar mr-1 fill-current text-blue-600 text-sm lg:text-xl "></i></a>`;
+                                }
                             if (boton[x] == 'eliminar') contenido += `<a class="mr-1 eliminar cursor-pointer" title="Eliminar" data-eliminar="${datos[i]['Nº']}"><i class="fas fa-trash-alt mr-1 fill-current text-red-600 text-sm lg:text-xl"></i></a>`;
                             if (boton[x] == 'validar') {
                                 var verValidar = (datos[i]['Estado'] == 'terminadasinvalorar') ? 'block' : 'none';
@@ -206,13 +213,83 @@ export class creartabla {
                             }
                             if (boton[x] == 'comentario') contenido += `<a href="" class="mr-1 comentario" title="Comentarios"><i class="fas fa-comment-dots mr-1 fill-current text-red-600 text-sm lg:text-xl"></i></a>`;
                             if (boton[x] == 'modificar') contenido += `<a href="" class="mr-1 modificar" title="Modificar"><i class="fas fa-shopping-cart mr-1 fill-current text-red-700 text-sm lg:text-xl"></i></a>`;
+                            if (boton[x] == 'modificarBolsa') {
+                                    contenido += `<a href="" class="mr-1 modificarBolsa" title="Modificar"><i class="fas fa-shopping-cart mr-1 fill-current text-yellow-500 text-sm lg:text-xl"></i></a>`;
+                                }
                             if (boton[x] == 'historial') contenido += `<a href="" class="mr-1 historial" title="ver historial"><i class="fas fa-history mr-1 fill-current text-gray-600 text-sm lg:text-xl"></i></a>`;
                             if (boton[x] == 'historialCliente') {
                                 var verHorasCliente = (datos[i]['verhorascliente'] == 'horas') ? 'block' : 'none';
                                 contenido += `<a href="" style="display:${verHorasCliente}" class="mx-1 historial" title="ver historial"><i class="fas fa-history mr-1 fill-current text-gray-600 text-sm lg:text-xl"></i></a>`;
                             }
-                            // otros botones se conservan — reproducir según original si hace falta
-                        }
+                            if (boton[x] == 'verEditar') {
+                                    contenido += `
+                                    <div class="flex-1"><form action="${rutaApp}" method="POST" title="editar">
+                                    <input type="number" class="hidden" name="id" value="${datos[i]['Nº']}">
+                                    <button type="submit" class="btnActualizar"><i class="fas fa-user-edit mr-1 fill-current text-yellow-500 text-sm lg:text-xl"></i></button>
+                                    </form></div>`;
+                                }
+                                if (boton[x] == 'verUsuario') {
+                                    contenido += `
+                                    <div class="flex-1"><form action="${rutaApp}" method="POST" title="ver">
+                                    <input type="number" class="hidden" name="id" value="${datos[i]['idusuario']}">
+                                    <button type="submit" class="btnActualizar"><i class="fas fa-user-edit mr-1 fill-current text-yellow-500 text-sm lg:text-xl"></i></button>
+                                    </form></div>`;
+                                }
+
+                                if (boton[x] == 'estadoatencion') {
+
+                                    var verPlayStop = 'block';
+                                    if (datos[i]['Estado'] == 'terminada' || datos[i]['Estado'] == 'terminadasinvalorar') {
+                                        verPlayStop = 'none';
+                                    }
+
+                                    var iconAtencion = 'far fa-play-circle text-red-600';
+                                    var accion = 'iniciar';
+                                    if (datos[i]['Atención'] != '' && datos[i]['Atención'] > 0) {
+                                        iconAtencion = 'far fa-stop-circle text-green-600';
+                                        accion = 'detener';
+                                    }
+                                    contenido += `<a href="" class="mr-1 ${accion}" title="${accion} atención" data-atencion="${datos[i]['Atención']}" style="display:${verPlayStop}"><i class="${iconAtencion} mr-1 fill-current text-sm lg:text-xl"></i></a>`;
+                                }
+
+                                if (boton[x] == 'estadoatencioncliente') {
+
+                                    var verEstadoAtencion = 'block';
+                                    if (datos[i]['Estado'] == 'terminada' || datos[i]['Estado'] == 'terminadasinvalorar') {
+                                        verEstadoAtencion = 'none';
+                                    }
+
+                                    var iconAtencionCliente = 'fas fa-user-clock text-red-600';
+                                    var accionCli = 'estamos trabajando';
+                                    if (datos[i]['Atención'] != '' && datos[i]['Atención'] > 0) {
+                                        iconAtencionCliente = 'far fa-stop-circle text-green-600';
+                                        accionCli = 'detenido';
+                                    }
+                                    contenido += `<a href="" class="mr-1 ${accionCli}" title="${accionCli}" style="display:${verEstadoAtencion}"><i class="${iconAtencionCliente} mr-1 fill-current text-sm lg:text-xl"></i></a>`;
+                                }
+                                if (boton[x] == 'reasignar') {
+                                    var verReasignar = 'block';
+                                    if (datos[i]['Estado'] == 'terminada' || datos[i]['Estado'] == 'terminadasinvalorar') {
+                                        verReasignar = 'none';
+                                    }
+                                    contenido += `<a href="" class="mr-1 reasignar" title="reasignar técnico"><i class="fas fa-random mr-1 fill-current texto-violeta-oscuro text-sm lg:text-xl" style="display:${verReasignar}"></i></a>`;
+                                }
+                                if (boton[x] == 'reabrir') {
+                                    var verReabrir = 'none';
+                                    if (datos[i]['Estado'] == 'terminada' || datos[i]['Estado'] == 'terminadasinvalorar') {
+                                        verReabrir = 'block';
+                                    }
+                                    contenido += `<a href="" class="mr-1 reabrir" title="reabrir"><i class="fas fa-folder-open mr-1 fill-current  text-green-600 text-sm lg:text-xl" style="display:${verReabrir}"></i></a>`;
+                                }
+
+                                if (boton[x] == 'rechazar') {
+                                    var verRechazar = 'none';
+                                    if (datos[i]['Estado'] == 'pendiente' || datos[i]['Estado'] == 'en curso') {
+                                        verRechazar = 'block';
+                                    }
+                                    contenido += `<a href="" class="mr-1 rechazarIncidencia" title="rechazar"><i class="far fa-times-circle mr-1 fill-current  text-pink-600 text-sm lg:text-xl" style="display:${verRechazar}"></i></a>`;
+                                }
+                            }
                         contenido += `</div></td>`;
                     }
 
@@ -415,7 +492,6 @@ export default function arrancar(objeto, ruta, destino, orden, tipoOrden, pagina
         // Aplicar el nuevo criterio de orden
         objeto.setSortCriterion(campo, siguiente);
     });
-
     
 };
 
