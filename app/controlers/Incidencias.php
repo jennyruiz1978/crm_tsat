@@ -354,23 +354,6 @@ class Incidencias extends Controlador {
         print_r($cont);
     }  
 
-    private function mapearCampoOrden($campoVisible) {
-        $mapa = [
-            'Nº'          => 'inc.id',
-            'Creación'    => 'inc.creacion',          // campo real para ordenar (no formateado)
-            'Usuario'     => "CONCAT(usu.nombre, ' ', usu.apellidos)",
-            'Cliente'     => "CONCAT(cli.nombre, ' ', cli.nombrecomercial)",
-            'Sucursal'    => 'suc.nombre',
-            'Equipo'      => 'equ.nombre',
-            'Estado'      => 'inc.estado',
-            'Técnicos'    => 'inc.nombrestecnicos',
-            'Fact/Ppto'   => 'inc.nomestadofactppto',
-            'Agendado'    => "DATE_FORMAT(inc.fechahora, '%Y/%m/%d', 'es_ES')",
-            // Agrega todos los que sean necesarios
-        ];
-        return $mapa[$campoVisible] ?? $campoVisible; // si no está mapeado, se usa el mismo 
-    }
-
     private function mapearCampoOrdenMultiple($campoVisible) {
         $mapa = [
             'Nº'          => 'inc.id',
