@@ -366,7 +366,6 @@ class Incidencias extends Controlador {
             'Técnicos'    => 'inc.nombrestecnicos',
             'Fact/Ppto'   => 'inc.nomestadofactppto',
             'Agendado'    => "DATE_FORMAT(inc.fechahora, '%Y/%m/%d', 'es_ES')",
-            // Añade otros campos visibles si existen
         ];
         return $mapa[$campoVisible] ?? $campoVisible;
     }
@@ -391,7 +390,6 @@ class Incidencias extends Controlador {
                 $cond .= $this->construirCondicionesBuscar($datos);
             }
 
-            //$incidencias = $this->ModelIncidencias->obtenerIncidenciasTablaClassBuscar($filas, $clausulaOrder, $filaspagina, $tipoSimple, $cond);
             $incidencias = $this->ModelIncidencias->obtenerIncidenciasConOrdenMultiple($filas, $clausulaOrder, $filaspagina, $tipoSimple, $cond);
             print(json_encode($incidencias));
         }

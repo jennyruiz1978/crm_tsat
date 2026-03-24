@@ -209,8 +209,6 @@ class ModeloIncidencias{
             WHERE inc.activo = 1 $cond
             ORDER BY " . $orden . "  
             LIMIT $filaspagina, $filas");
-            /*echo "mi consulta <br><br>";
-            print_r($sql);*/
 
         $resultado = $this->db->registros();
         return $resultado;
