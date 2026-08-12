@@ -79,11 +79,15 @@ class Login extends Controlador {
                 $_SESSION['token_control'] = 1;
                 $_SESSION['permisos'] = $permisosUsuario;
                 $_SESSION['controlLinksUsuario'] = $linksUsuario;
-                $_SESSION['inicio'] = date("Y-n-j H:i:s"); 
+                $_SESSION['inicio'] = date("Y-n-j H:i:s");
+                $modeloConfigHorario = $this->modelo('ModeloConfiguracionHorario');
+                $_SESSION['debeFichar'] = $modeloConfigHorario->empleadoDebeFichar($_SESSION['idusuario']) ? 1 : 0;
 
                 if ($idUsuario->rol == 1 || $idUsuario->rol ==2 ) { //vista cliente ó técnico                   
                     redireccionar('/Incidencias');
                     
+                }elseif($idUsuario->rol == 3){ //visitante/fichador - solo control horario
+                    redireccionar('/ControlHorario/fichar');
                 }else{
                     redireccionar('/Inicio'); //vista Admin
                 }
@@ -93,6 +97,61 @@ class Login extends Controlador {
         }
     } 
 
+
+    public function fichar()
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mail']) && isset($_POST['pass'])) {
+            $mail = $_POST['mail'];
+            $pass = $_POST['pass'];
+
+            $validacion = $this->ModeloLogin->comprobarLogin($mail, $pass);
+
+            if ($validacion == false) {
+                redireccionar('/Login');
+                return;
+            }
+
+            $idUsuario = $this->ModeloLogin->identificadorUsuario($mail, $pass);
+            $datosUser = $this->ModeloLogin->verificarSiExigeCambioPassword($idUsuario->id);
+
+            if ($datosUser->cambiar == 1) {
+                redireccionar('/Login/cambioContrasenia/2/' . $idUsuario->id);
+                return;
+            }
+
+            $permisos = $this->ModeloLogin->consultaPermisos($idUsuario->rol);
+            $permisosUsuario = json_decode($permisos);
+
+            $linksUsuario = [];
+            foreach ($permisosUsuario as $links) {
+                if (isset($links[3])) {
+                    for ($i = 0; $i < count($links[3]); $i++) {
+                        array_push($linksUsuario, RUTA_PERMISOS . $links[3][$i][0]);
+                        if (is_array($links[3][$i]) == true && count($links[3][$i]) > 2) {
+                            for ($j = 2; $j < (count($links[3][$i])); $j++) {
+                                array_push($linksUsuario, RUTA_PERMISOS . $links[3][$i][$j][0]);
+                            }
+                        }
+                    }
+                }
+            }
+
+            session_start();
+            $_SESSION['usuario'] = $validacion;
+            $_SESSION['nombrerol'] = $datosUser->nombrerol;
+            $_SESSION['idusuario'] = $datosUser->id;
+            $_SESSION['token_control'] = 1;
+            $_SESSION['permisos'] = $permisosUsuario;
+            $_SESSION['controlLinksUsuario'] = $linksUsuario;
+            $_SESSION['inicio'] = date("Y-n-j H:i:s");
+            $modeloConfigHorario = $this->modelo('ModeloConfiguracionHorario');
+            $_SESSION['debeFichar'] = $modeloConfigHorario->empleadoDebeFichar($_SESSION['idusuario']) ? 1 : 0;
+
+            redireccionar('/ControlHorario/fichar');
+        } else {
+            redireccionar('/Login');
+        }
+    }
 
     public function vaciar(){
         session_start();

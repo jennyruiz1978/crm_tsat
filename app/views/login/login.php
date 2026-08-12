@@ -65,7 +65,15 @@
               >
                 Acceder
               </button>
-              
+            </div>
+            <div>
+              <button
+                type="button"
+                onclick="document.getElementById('formLogin').action='<?php echo RUTA_URL; ?>/Login/fichar'; document.getElementById('formLogin').submit();"
+                class="w-full px-4 py-2 text-lg font-semibold text-white transition-colors duration-300 bg-green-600 hover:bg-green-700 rounded-md shadow focus:outline-none focus:ring-green-500 focus:ring-4"
+              >
+                <i class="fas fa-clock mr-2"></i>Fichar
+              </button>
             </div>
             <a class="text-sm font-semibold text-gray-500" href="<?php echo RUTA_URL . "/Login/solicitarRecuperarContrasenia"; ?>">¿Olvidaste tu contraseña?</a>
 

@@ -40,9 +40,19 @@
                             <label class="uppercase md:text-sm text-xs text-gray-500 text-light font-semibold">Rol</label>
                             <select name="rol" id="rol" class="py-2 px-3 rounded-lg border border-gray-300 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-transparent">
                             <?php
-                               
-                                    echo"
-                                    <option value='".$datos['usuario']->rol."'>".ucwords($datos['nombreRol'])."</option>";                                
+                                $rolesOpciones = [
+                                    0 => 'Admin',
+                                    1 => 'Cliente',
+                                    3 => 'Visitante'
+                                ];
+                                $rolActual = (int)$datos['usuario']->rol;
+                                if ($rolActual === 2) {
+                                    $rolesOpciones[2] = 'Técnico';
+                                }
+                                foreach ($rolesOpciones as $valor => $etiqueta) {
+                                    $selected = ($valor === $rolActual) ? ' selected' : '';
+                                    echo "<option value='$valor'$selected>$etiqueta</option>";
+                                }
                             ?>
                             </select>
                         </div>

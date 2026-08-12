@@ -94,7 +94,17 @@ class Controlador
 
     public function controlPermisos()
     {
-        if (in_array($_SERVER['REQUEST_URI'], $_SESSION['controlLinksUsuario']) == False) {
+        $requestUri = strtok($_SERVER['REQUEST_URI'], '?');
+        $autorizado = false;
+
+        foreach ($_SESSION['controlLinksUsuario'] as $link) {
+            if ($requestUri === $link || strpos($requestUri, $link . '/') === 0) {
+                $autorizado = true;
+                break;
+            }
+        }
+
+        if (!$autorizado) {
             session_unset();
             session_destroy();
             if (headers_sent()) {

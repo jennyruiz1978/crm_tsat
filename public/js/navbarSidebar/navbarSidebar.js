@@ -47,10 +47,12 @@
       }) 
     }
 
+    if (profileBtn) {
     profileBtn.addEventListener("click", function(){
       let profileDiv = document.querySelector('#profileDiv');
       showHide(profileDiv);
     })
+    }
 
  
  

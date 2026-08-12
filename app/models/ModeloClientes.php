@@ -288,10 +288,23 @@ class ModeloClientes{
     public function obtenerEquiposTablaClass($filas,$orden,$tipoOrden,$filaspagina,$cond)
     {
         $this->db->query("SELECT eq.id AS 'Nº', eq.nombre AS 'Nombre equipo',                
-                        eq.valor AS 'Coste actual',  
+                        IFNULL(mme.contratado, 0) AS 'Coste actual',                          
                         suc.nombre AS 'Sucursal'
                         FROM equipos eq
                         LEFT JOIN sucursales suc ON eq.idsucursal=suc.id
+
+                        LEFT JOIN (
+                            SELECT m1.idequipo, m1.contratado
+                            FROM modalidadesmanttoequipo m1
+                            INNER JOIN (
+                                SELECT idequipo, MAX(fechainicio) AS max_fecha
+                                FROM modalidadesmanttoequipo
+                                GROUP BY idequipo
+                            ) ult
+                                ON m1.idequipo = ult.idequipo
+                            AND m1.fechainicio = ult.max_fecha
+                        ) mme ON eq.id = mme.idequipo
+
                         WHERE 1 $cond
                         order by " . $orden . " " . $tipoOrden . " limit $filaspagina,$filas ");
        

@@ -10,6 +10,7 @@ class Usuarios extends Controlador
         session_start();
         $this->controlPermisos();
         $this->modeloUsuarios = $this->modelo('Usuario');
+        $this->modeloConfigHorario = $this->modelo('ModeloConfiguracionHorario');
     }
 
     public function index()
@@ -433,7 +434,11 @@ class Usuarios extends Controlador
             $upd = $this->modeloUsuarios->actualizarUsuario($datosActualizar);
 
             if ($upd && $upd >0) {
-                $_SESSION['message'] = 'Se ha actualizado el usuario corréctamente.';               
+                $_SESSION['message'] = 'Se ha actualizado el usuario corréctamente.';
+                try {
+                    $this->actualizarConfigHorarioSegunRol((int)$_POST['id'], (int)$_POST['rol']);
+                } catch (\Exception $e) {
+                }
             }else{
                 $_SESSION['message'] = 'Ha ocurrido un error. No se puede actualizar el usuario. Consulte con el administrador';
             }
@@ -714,5 +719,23 @@ class Usuarios extends Controlador
                     <tr>";            
         }
         return $html;
+    }
+
+    private function actualizarConfigHorarioSegunRol($idEmpleado, $rol)
+    {
+        if ($rol == 1) {
+            $configExistente = $this->modeloConfigHorario->obtenerConfigPorEmpleado($idEmpleado);
+            if ($configExistente) {
+                $datosConfig = [
+                    'idempleado' => $idEmpleado,
+                    'debeFichar' => 0,
+                    'jornadatipohoras' => $configExistente->jornadatipohoras,
+                    'horarioentrada' => $configExistente->horarioentrada,
+                    'horariosalida' => $configExistente->horariosalida,
+                    'toleranciaminutos' => $configExistente->toleranciaminutos
+                ];
+                $this->modeloConfigHorario->actualizarConfig($datosConfig);
+            }
+        }
     }
 }

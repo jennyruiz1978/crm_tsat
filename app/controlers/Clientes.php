@@ -2292,7 +2292,7 @@ class Clientes extends Controlador
                         $cond .= "eq.nombre" . $y;
                     }                                        
                     if ($key == 'Coste actual') {
-                        $cond .= "eq.valor" . $y;
+                        $cond .= "mme.contratado" . $y;
                     }
                     if ($key == 'Sucursal') {
                         $cond .= "suc.nombre" . $y;
@@ -2341,7 +2341,7 @@ class Clientes extends Controlador
                         $cond .= "eq.nombre" . $y;
                     }                                        
                     if ($key == 'Coste actual') {
-                        $cond .= "eq.valor" . $y;
+                        $cond .= "mme.contratado" . $y;
                     }
                     if ($key == 'Sucursal') {
                         $cond .= "suc.nombre" . $y;
@@ -2631,6 +2631,8 @@ class Clientes extends Controlador
 
     }
 
+    //este metodo pinta el historial de contratos de mantenimiento de un equipo, se llama cada vez que se añade un nuevo contrato o se elimina uno para actualizar la tabla del historial
+    
     private function construirTablaHistorialContratos($idEquipo)
     {
         $datos = $this->ModelClientes->obtenerHistoriaContratosMnttoEquipos($idEquipo);
