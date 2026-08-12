@@ -1,0 +1,132 @@
+<?php require_once(RUTA_APP . '/views/includes/header-tailwind.php'); ?>
+<?php require_once(RUTA_APP . '/views/includes/navbar-tailwind.php'); ?>
+<?php require_once(RUTA_APP . '/views/includes/sidebar-tailwind.php'); ?>
+
+<div class="w-full overflow-x-hidden border-t flex flex-col">
+    <main class="w-full flex-grow p-4 md:p-6">
+        <h2 class="text-2xl font-semibold leading-tight flex-1 mr-2 mb-4">Solicitar Modificación</h2>
+
+        <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-6">
+            <form method="POST" action="<?php echo RUTA_URL; ?>/ControlHorario/solicitarModificacion">
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de modificación</label>
+                    <select name="tipomodificacion" id="tipoModificacion" class="w-full border rounded px-3 py-2 text-sm" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="insertar">Insertar fichaje olvidado</option>
+                        <option value="modificar">Modificar hora de un fichaje</option>
+                        <option value="omitir">Marcar fichaje como erróneo</option>
+                    </select>
+                </div>
+
+                <div id="campoFichajeOriginal" class="mb-4 hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Fichaje a corregir</label>
+                    <select name="idfichajeoriginal" id="fichajeOriginal" class="w-full border rounded px-3 py-2 text-sm">
+                        <option value="" data-jornada="">Seleccionar fichaje...</option>
+                        <?php if (isset($datos['fichajesRecientes'])): ?>
+                            <?php foreach ($datos['fichajesRecientes'] as $f): ?>
+                                <option value="<?php echo $f->id; ?>" data-jornada="<?php echo $f->idjornada; ?>">
+                                    <?php echo date('d/m/Y H:i', strtotime($f->fechahora)); ?> - <?php echo ucfirst($f->tipofichaje); ?>
+                                    <?php if ($f->observaciones): ?> (<?php echo $f->observaciones; ?>)<?php endif; ?>
+                                </option>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </select>
+                </div>
+                <input type="hidden" name="idjornadaoriginal" id="jornadaOriginalHidden" value="">
+
+                <div id="campoJornadaOriginal" class="mb-4 hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Jornada</label>
+                    <select name="idjornadaoriginal" id="jornadaOriginal" class="w-full border rounded px-3 py-2 text-sm">
+                        <option value="">Seleccionar jornada...</option>
+                        <?php if (isset($datos['jornadas'])): ?>
+                            <?php foreach ($datos['jornadas'] as $j): ?>
+                                <option value="<?php echo $j->id; ?>">
+                                    <?php echo date('d/m/Y', strtotime($j->fecha)); ?> - <?php echo ucfirst($j->estadojornada); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </select>
+                </div>
+
+                <div id="campoNuevoTipo" class="mb-4 hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de fichaje</label>
+                    <select name="nuevotipofichaje" id="nuevoTipoFichaje" class="w-full border rounded px-3 py-2 text-sm">
+                        <option value="entrada">Entrada</option>
+                        <option value="salida">Salida</option>
+                    </select>
+                </div>
+
+                <div id="campoNuevaFechaHora" class="mb-4 hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nueva fecha y hora</label>
+                    <input type="datetime-local" name="nuevafechahora" id="nuevaFechaHora" class="w-full border rounded px-3 py-2 text-sm">
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+                    <textarea name="nuevaobservaciones" rows="2" class="w-full border rounded px-3 py-2 text-sm" placeholder="Observaciones opcionales sobre la corrección..."></textarea>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Motivo de la solicitud <span class="text-red-500">*</span></label>
+                    <textarea name="motivo" rows="3" class="w-full border rounded px-3 py-2 text-sm" placeholder="Explique el motivo de la corrección solicitada..." required></textarea>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="submit" class="bg-violeta-oscuro text-white px-6 py-2 rounded text-sm hover:bg-purple-800">
+                        <i class="fas fa-paper-plane mr-1"></i> Enviar solicitud
+                    </button>
+                    <a href="<?php echo RUTA_URL; ?>/ControlHorario/misSolicitudes" class="bg-gray-500 text-white px-6 py-2 rounded text-sm hover:bg-gray-600">
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+
+<script>
+document.getElementById('tipoModificacion').addEventListener('change', function() {
+    var tipo = this.value;
+    var campoFichaje = document.getElementById('campoFichajeOriginal');
+    var campoJornada = document.getElementById('campoJornadaOriginal');
+    var campoNuevoTipo = document.getElementById('campoNuevoTipo');
+    var campoNuevaFecha = document.getElementById('campoNuevaFechaHora');
+    var jornadaHidden = document.getElementById('jornadaOriginalHidden');
+
+    campoFichaje.classList.add('hidden');
+    campoJornada.classList.add('hidden');
+    campoNuevoTipo.classList.add('hidden');
+    campoNuevaFecha.classList.add('hidden');
+    jornadaHidden.value = '';
+
+    if (tipo === 'insertar') {
+        campoJornada.classList.remove('hidden');
+        campoNuevoTipo.classList.remove('hidden');
+        campoNuevaFecha.classList.remove('hidden');
+    } else if (tipo === 'modificar') {
+        campoFichaje.classList.remove('hidden');
+        campoNuevoTipo.classList.remove('hidden');
+        campoNuevaFecha.classList.remove('hidden');
+       actualizarJornadaDesdeFichaje();
+    } else if (tipo === 'omitir') {
+        campoFichaje.classList.remove('hidden');
+        actualizarJornadaDesdeFichaje();
+    }
+});
+
+document.getElementById('fichajeOriginal').addEventListener('change', actualizarJornadaDesdeFichaje);
+
+function actualizarJornadaDesdeFichaje() {
+    var select = document.getElementById('fichajeOriginal');
+    var jornadaHidden = document.getElementById('jornadaOriginalHidden');
+    var option = select.options[select.selectedIndex];
+    if (option && option.value !== '') {
+        jornadaHidden.value = option.getAttribute('data-jornada') || '';
+    } else {
+        jornadaHidden.value = '';
+    }
+}
+</script>
+
+<?php require_once(RUTA_APP . '/views/includes/footer.php'); ?>

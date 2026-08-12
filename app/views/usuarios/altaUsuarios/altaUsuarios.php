@@ -41,7 +41,8 @@
                         <select name="rol" id="rol" class="py-2 px-3 rounded-lg border border-gray-300 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-transparent" >
                             <option disabled selected>Seleccionar</option>
                             <option value="0">Admin</option>
-                            <option value="1">Cliente</option>                            
+                            <option value="1">Cliente</option>
+                            <option value="3">Visitante</option>
                         </select>
                     </div>
                 </div>

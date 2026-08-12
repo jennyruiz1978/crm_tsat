@@ -106,6 +106,8 @@ $(document).ready(function () {
 
 <script type="module" src="<?php echo RUTA_URL; ?>/public/js/editIncidencia.js?v=<?php echo(rand()); ?>"></script>
 
+<script src="<?php echo RUTA_URL; ?>/public/js/controlHorarioFichar.js?v=<?php echo(rand()); ?>"></script>
+
 
 </body>
 

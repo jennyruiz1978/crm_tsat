@@ -1,11 +1,17 @@
 if(window.location.pathname.includes('/')){ 
 
     urlCompleta = $('#ruta').val();
+    if (!urlCompleta) { urlCompleta = ''; }
+
+    var rolUsuario = $('#rolUsuarioFinalizar').val();
+    var esAdminOTecnico = (rolUsuario === 'admin' || rolUsuario === 'tecnico');
 
     //ALERTAS DE INCIDENCIAS PENDIENTES
     let id = $('#idUser').val()  
 
+    if (esAdminOTecnico) {
     myFunction(id);
+    } // fin esAdminOTecnico
     function myFunction(id) {
         $.ajax({
             type: "POST",          
@@ -19,6 +25,7 @@ if(window.location.pathname.includes('/')){
         });
     }    
 
+    if (esAdminOTecnico) {
     $('#notificationsBtn').on('click', function (e) {
         
         $.ajax({
@@ -39,6 +46,7 @@ if(window.location.pathname.includes('/')){
             }
         });
     });
+    } // fin esAdminOTecnico
 
     //para ocultar o mostrar contraseña
     const passToggle = document.querySelector('.js-pass-toggles')
@@ -64,6 +72,7 @@ if(window.location.pathname.includes('/')){
 
     
     //ACTUALIZAR LAS VARIABLES DE SESSION
+    if (esAdminOTecnico) {
     var refreshTime = 300000; // 5min in milliseconds
     window.setInterval( function() {
         $.ajax({
@@ -75,7 +84,8 @@ if(window.location.pathname.includes('/')){
             }
         });
     }, refreshTime );
-    
+    } // fin esAdminOTecnico
+
 
     //ALERTAS DE NUEVOS COMENTARIOS NO LEIDOS      
     function cargarComentariosNuevosSinLeer() {
@@ -88,8 +98,11 @@ if(window.location.pathname.includes('/')){
             }
         });
     }    
+    if (esAdminOTecnico) {
     cargarComentariosNuevosSinLeer();
+    } // fin esAdminOTecnico
 
+    if (esAdminOTecnico) {
     $('#comentariosBtn').on('click', function (e) {
         
         $.ajax({
@@ -108,7 +121,9 @@ if(window.location.pathname.includes('/')){
             }
         });
     });
+    } // fin esAdminOTecnico
 
+    if (esAdminOTecnico) {
     var refreshTime = 300000; // 5min in milliseconds
     window.setInterval( function() {
         $.ajax({
@@ -120,6 +135,7 @@ if(window.location.pathname.includes('/')){
             }
         });
     }, refreshTime );
+    } // fin esAdminOTecnico
     
 
     //ALERTAS SOLICITUDES POR FACTURAR
@@ -135,8 +151,11 @@ if(window.location.pathname.includes('/')){
             }
         });
     }    
+    if (esAdminOTecnico) {
     cargarSolicitPorFacturarYPresptarYAceptadasYPptos();
+    } // fin esAdminOTecnico
 
+    if (esAdminOTecnico) {
     $('#verFacturarBtn').on('click', function (e) {
         
         let estado = $(this).data('estado');
@@ -197,4 +216,5 @@ if(window.location.pathname.includes('/')){
             }
         });
     });
+    } // fin esAdminOTecnico
 }

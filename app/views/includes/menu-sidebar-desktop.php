@@ -10,7 +10,11 @@
     </div>
     <nav class="text-white text-base font-semibold pt-1" id="menu">
            
-            <?php foreach($_SESSION['permisos'] as $menu){  ?>
+            <?php foreach($_SESSION['permisos'] as $menuKey => $menu){ 
+                if (isset($_SESSION['debeFichar']) && $_SESSION['debeFichar'] == 0 && $menuKey === 'ControlHorario') {
+                    continue;
+                }
+            ?>
               <div class="m-2">
               <div class="flex items-center active-nav-link text-white opacity-75 hover:opacity-100 py-1 pl-6 nav-item menu-btn">
               <?php print "<span><i class='" . $menu[1] . " mr-3'></i></span>";

@@ -1,11 +1,6 @@
 <?php
 
 // configuracion acceso a base de datos producción
-
-
-
-
-
 define('DB_HOST','localhost:3307');
 define('DB_USUARIO','root');
 define('DB_PASSWORD','');
