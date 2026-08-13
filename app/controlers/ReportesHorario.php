@@ -108,7 +108,7 @@ class ReportesHorario extends Controlador
 
         foreach ($resumen as $jornada) {
             $horasTotales += $jornada->horastotales;
-            if ($jornada->completada) {
+            if ($jornada->completada || in_array($jornada->estadojornada, ['vacaciones', 'baja', 'ausencia'])) {
                 $jornadasCompletas++;
             } else {
                 $jornadasIncompletas++;
@@ -155,7 +155,7 @@ class ReportesHorario extends Controlador
 
         foreach ($resumen as $jornada) {
             $horasTotales += $jornada->horastotales;
-            if ($jornada->completada) {
+            if ($jornada->completada || in_array($jornada->estadojornada, ['vacaciones', 'baja', 'ausencia'])) {
                 $jornadasCompletas++;
             } else {
                 $jornadasIncompletas++;

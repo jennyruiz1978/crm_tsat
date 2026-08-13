@@ -151,13 +151,11 @@
                 <?php endif; ?>
             </div>
 
-            <?php if (!empty($datos['fichajes'])): ?>
-                <div class="flex gap-3">
-                    <a href="<?php echo RUTA_URL; ?>/ControlHorario/solicitarModificacion" class="bg-yellow-500 text-white px-4 py-2 rounded text-sm hover:bg-yellow-600">
-                        <i class="fas fa-edit mr-1"></i> Solicitar corrección
-                    </a>
-                </div>
-            <?php endif; ?>
+            <div class="flex gap-3">
+                <a href="<?php echo RUTA_URL; ?>/ControlHorario/solicitarModificacion" class="bg-yellow-500 text-white px-4 py-2 rounded text-sm hover:bg-yellow-600">
+                    <i class="fas fa-edit mr-1"></i> Solicitar corrección
+                </a>
+            </div>
 
         </div>
     </main>

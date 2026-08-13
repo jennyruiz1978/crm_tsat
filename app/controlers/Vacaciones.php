@@ -353,7 +353,7 @@ class Vacaciones extends Controlador
 
             if (isset($jornada) && $jornada) {
                 $this->db = new Base;
-                $this->db->query("UPDATE jornadas SET estadojornada = 'vacaciones' WHERE id = :id");
+                $this->db->query("UPDATE jornadas SET estadojornada = 'vacaciones', completada = 1, horastotales = 0 WHERE id = :id");
                 $this->db->bind(':id', $jornada->id);
                 $this->db->execute();
             }
@@ -385,7 +385,7 @@ class Vacaciones extends Controlador
 
             if (isset($jornada) && $jornada) {
                 $this->db = new Base;
-                $this->db->query("UPDATE jornadas SET estadojornada = 'baja' WHERE id = :id");
+                $this->db->query("UPDATE jornadas SET estadojornada = 'baja', completada = 1, horastotales = 0 WHERE id = :id");
                 $this->db->bind(':id', $jornada->id);
                 $this->db->execute();
             }
@@ -417,7 +417,7 @@ class Vacaciones extends Controlador
 
             if (isset($jornada) && $jornada) {
                 $this->db = new Base;
-                $this->db->query("UPDATE jornadas SET estadojornada = 'ausencia' WHERE id = :id");
+                $this->db->query("UPDATE jornadas SET estadojornada = 'ausencia', completada = 1, horastotales = 0 WHERE id = :id");
                 $this->db->bind(':id', $jornada->id);
                 $this->db->execute();
             }
@@ -438,7 +438,7 @@ class Vacaciones extends Controlador
             if ($jornada) {
                 $estado = $vacacion->tipovacacion === 'baja' ? 'baja' : ($vacacion->tipovacacion === 'ausencia' ? 'ausencia' : 'vacaciones');
                 $this->db = new Base;
-                $this->db->query("UPDATE jornadas SET estadojornada = :estado WHERE id = :id");
+                $this->db->query("UPDATE jornadas SET estadojornada = :estado, completada = 1, horastotales = 0 WHERE id = :id");
                 $this->db->bind(':estado', $estado);
                 $this->db->bind(':id', $jornada->id);
                 $this->db->execute();
@@ -462,6 +462,7 @@ class Vacaciones extends Controlador
                 $this->db->query("UPDATE jornadas SET estadojornada = 'abierta', horastotales = 0, completada = 0 WHERE id = :id");
                 $this->db->bind(':id', $jornada->id);
                 $this->db->execute();
+                $this->ModelControlHorario->recalcularEstadoJornada($jornada->id);
             }
             $fecha->modify('+1 day');
         }
@@ -482,6 +483,7 @@ class Vacaciones extends Controlador
                 $this->db->query("UPDATE jornadas SET estadojornada = 'abierta', horastotales = 0, completada = 0 WHERE id = :id");
                 $this->db->bind(':id', $jornada->id);
                 $this->db->execute();
+                $this->ModelControlHorario->recalcularEstadoJornada($jornada->id);
             }
             $fecha->modify('+1 day');
         }

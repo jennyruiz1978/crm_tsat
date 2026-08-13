@@ -27,8 +27,8 @@ class ModeloReportesHorario
         $this->db->query("SELECT j.idempleado, CONCAT(u.nombre, ' ', u.apellidos) AS nombreempleado,
             COUNT(j.id) AS diasstrabajados,
             SUM(j.horastotales) AS totalhoras,
-            SUM(CASE WHEN j.completada = 1 THEN 1 ELSE 0 END) AS jornadascompletas,
-            SUM(CASE WHEN j.completada = 0 THEN 1 ELSE 0 END) AS jornadasincompletas
+            SUM(CASE WHEN j.completada = 1 OR j.estadojornada IN ('vacaciones', 'baja', 'ausencia') THEN 1 ELSE 0 END) AS jornadascompletas,
+            SUM(CASE WHEN j.completada = 0 AND j.estadojornada NOT IN ('vacaciones', 'baja', 'ausencia') THEN 1 ELSE 0 END) AS jornadasincompletas
             FROM jornadas j
             LEFT JOIN usuarios u ON j.idempleado = u.id
             WHERE MONTH(j.fecha) = :mes AND YEAR(j.fecha) = :anio AND j.eliminado = 0
@@ -81,8 +81,8 @@ class ModeloReportesHorario
     {
         $this->db->query("SELECT MONTH(j.fecha) AS mes, COUNT(j.id) AS diasstrabajados,
             SUM(j.horastotales) AS totalhoras,
-            SUM(CASE WHEN j.completada = 1 THEN 1 ELSE 0 END) AS completas,
-            SUM(CASE WHEN j.completada = 0 THEN 1 ELSE 0 END) AS incompletas
+            SUM(CASE WHEN j.completada = 1 OR j.estadojornada IN ('vacaciones', 'baja', 'ausencia') THEN 1 ELSE 0 END) AS completas,
+            SUM(CASE WHEN j.completada = 0 AND j.estadojornada NOT IN ('vacaciones', 'baja', 'ausencia') THEN 1 ELSE 0 END) AS incompletas
             FROM jornadas j
             WHERE j.idempleado = :idempleado AND YEAR(j.fecha) = :anio AND j.eliminado = 0
             GROUP BY MONTH(j.fecha)

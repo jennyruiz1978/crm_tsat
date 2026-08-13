@@ -317,24 +317,7 @@ class AdministracionHorario extends Controlador
 
     private function recalcularJornada($idJornada)
     {
-        $fichajes = $this->ModelControlHorario->obtenerFichajesJornada($idJornada);
-        $horasTotales = ControlHorarioHelper::calcularHorasEntreFichajes($fichajes);
-        $this->ModelControlHorario->actualizarHorasJornada($idJornada, $horasTotales);
-
-        $jornada = $this->ModelControlHorario->obtenerJornadaPorId($idJornada);
-        $fechaHoy = date('Y-m-d');
-        if ($jornada && $jornada->fecha < $fechaHoy) {
-            if (!empty($fichajes)) {
-                $ultimoFichaje = end($fichajes);
-                if ($ultimoFichaje->tipofichaje === 'salida') {
-                    $this->ModelControlHorario->cerrarJornada($idJornada, $horasTotales);
-                } else {
-                    $this->ModelControlHorario->marcarJornadaIncompleta($idJornada);
-                }
-            } else {
-                $this->ModelControlHorario->marcarJornadaIncompleta($idJornada);
-            }
-        }
+        $this->ModelControlHorario->recalcularEstadoJornada($idJornada);
     }
 
     public function configuracionHorario()
