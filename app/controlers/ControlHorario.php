@@ -69,25 +69,7 @@ class ControlHorario extends Controlador
         require_once(RUTA_APP . '/helpers/ControlHorarioHelper.php');
 
         foreach ($jornadasAbiertas as $jornadaAbierta) {
-            $fichajes = $this->ModelControlHorario->obtenerFichajesJornadaActivos($jornadaAbierta->id);
-            if (ControlHorarioHelper::jornadaTieneSalidaPendiente($fichajes)) {
-                $this->ModelControlHorario->marcarJornadaIncompleta($jornadaAbierta->id);
-            } else {
-                $horas = ControlHorarioHelper::calcularHorasEntreFichajes($fichajes);
-                $this->ModelControlHorario->cerrarJornada($jornadaAbierta->id, $horas);
-            }
-        }
-
-        $jornadasAbiertas = $this->ModelControlHorario->buscarJornadasAbiertasAnteriores($idEmpleado, $fechaHoy);
-
-        foreach ($jornadasAbiertas as $jornadaAbierta) {
-            $fichajes = $this->ModelControlHorario->obtenerFichajesJornadaActivos($jornadaAbierta->id);
-            if (ControlHorarioHelper::jornadaTieneSalidaPendiente($fichajes)) {
-                $this->ModelControlHorario->marcarJornadaIncompleta($jornadaAbierta->id);
-            } else {
-                $horas = ControlHorarioHelper::calcularHorasEntreFichajes($fichajes);
-                $this->ModelControlHorario->cerrarJornada($jornadaAbierta->id, $horas);
-            }
+            $this->ModelControlHorario->recalcularEstadoJornada($jornadaAbierta->id);
         }
 
         $jornadasIncompletas = $this->ModelControlHorario->buscarJornadasIncompletasAnteriores($idEmpleado, $fechaHoy);
@@ -179,13 +161,7 @@ class ControlHorario extends Controlador
 
         $jornadasAbiertas = $this->ModelControlHorario->buscarJornadasAbiertasAnteriores($idEmpleado, $fechaHoy);
         foreach ($jornadasAbiertas as $jornadaAbierta) {
-            $fichajes = $this->ModelControlHorario->obtenerFichajesJornadaActivos($jornadaAbierta->id);
-            if (ControlHorarioHelper::jornadaTieneSalidaPendiente($fichajes)) {
-                $this->ModelControlHorario->marcarJornadaIncompleta($jornadaAbierta->id);
-            } else {
-                $horas = ControlHorarioHelper::calcularHorasEntreFichajes($fichajes);
-                $this->ModelControlHorario->cerrarJornada($jornadaAbierta->id, $horas);
-            }
+            $this->ModelControlHorario->recalcularEstadoJornada($jornadaAbierta->id);
         }
 
         $tipoFichaje = $tipoSiguiente;
@@ -234,11 +210,9 @@ class ControlHorario extends Controlador
             return;
         }
 
-        if ($tipoFichaje === 'salida') {
-            $fichajes = $this->ModelControlHorario->obtenerFichajesJornadaActivos($idJornada);
-            $horas = ControlHorarioHelper::calcularHorasEntreFichajes($fichajes);
-            $this->ModelControlHorario->actualizarHorasJornada($idJornada, $horas);
-        }
+        $this->ModelControlHorario->recalcularEstadoJornada($idJornada);
+        $jornadaActualizada = $this->ModelControlHorario->obtenerJornadaPorId($idJornada);
+        $horas = $jornadaActualizada ? $jornadaActualizada->horastotales : 0;
 
         $datosAuditoria = ControlHorarioHelper::generarDatosAuditoria(
             $tipoFichaje === 'entrada' ? 'fichaje_entrada' : 'fichaje_salida',
@@ -269,7 +243,7 @@ class ControlHorario extends Controlador
             'tipoSiguiente' => $nuevoTipoSiguiente,
             'estadoTexto' => $nuevoTipoSiguiente === 'entrada' ? 'Fuera' : 'Dentro',
             'claseEstado' => $nuevoTipoSiguiente === 'entrada' ? 'bg-red-500' : 'bg-green-500',
-            'horastotales' => ($tipoFichaje === 'salida') ? $horas : null
+            'horastotales' => $horas
         ]);
     }
 

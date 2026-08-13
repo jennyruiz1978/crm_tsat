@@ -78,6 +78,48 @@ class ModeloControlHorario
         return $this->db->registros();
     }
 
+    public function recalcularEstadoJornada($idJornada)
+    {
+        require_once(RUTA_APP . '/helpers/ControlHorarioHelper.php');
+
+        $jornada = $this->obtenerJornadaPorId($idJornada);
+        if (!$jornada) return;
+
+        if (in_array($jornada->estadojornada, ['vacaciones', 'baja', 'ausencia'])) return;
+
+        $fichajes = $this->obtenerFichajesJornadaActivos($idJornada);
+        $fechaHoy = date('Y-m-d');
+        $horasTotales = ControlHorarioHelper::calcularHorasEntreFichajes($fichajes);
+
+        if (empty($fichajes)) {
+            if ($jornada->fecha < $fechaHoy) {
+                $this->db->query("UPDATE jornadas SET estadojornada = 'incompleta', completada = 0, horastotales = 0 WHERE id = :id");
+            } else {
+                $this->db->query("UPDATE jornadas SET estadojornada = 'abierta', completada = 0, horastotales = 0 WHERE id = :id");
+            }
+            $this->db->bind(':id', $idJornada);
+            $this->db->execute();
+            return;
+        }
+
+        $ultimoFichaje = end($fichajes);
+
+        if ($jornada->fecha < $fechaHoy) {
+            if ($ultimoFichaje->tipofichaje === 'salida') {
+                $this->db->query("UPDATE jornadas SET estadojornada = 'cerrada', completada = 1, horastotales = :horastotales WHERE id = :id");
+                $this->db->bind(':horastotales', $horasTotales);
+            } else {
+                $this->db->query("UPDATE jornadas SET estadojornada = 'incompleta', completada = 0, horastotales = :horastotales WHERE id = :id");
+                $this->db->bind(':horastotales', $horasTotales);
+            }
+        } else {
+            $this->db->query("UPDATE jornadas SET estadojornada = 'abierta', completada = 0, horastotales = :horastotales WHERE id = :id");
+            $this->db->bind(':horastotales', $horasTotales);
+        }
+        $this->db->bind(':id', $idJornada);
+        $this->db->execute();
+    }
+
     public function obtenerFichajesPorEmpleadoYFecha($idEmpleado, $fecha)
     {
         $this->db->query("SELECT * FROM fichajes WHERE idempleado = :idempleado AND DATE(fechahora) = :fecha AND eliminado = 0 AND corregido = 0 ORDER BY fechahora ASC");

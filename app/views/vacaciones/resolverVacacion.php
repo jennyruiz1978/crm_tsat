@@ -5,7 +5,11 @@
 <div class="w-full overflow-x-hidden border-t flex flex-col">
     <main class="w-full flex-grow p-4 md:p-6">
         <div class="flex items-center justify-between mb-4">
-            <h2 class="text-2xl font-semibold leading-tight">Resolver Solicitud de Vacaciones #<?php echo $datos['vacacion']->id; ?></h2>
+            <?php
+            $tiposTitulo = ['vacaciones' => 'Vacaciones', 'baja' => 'Baja Médica', 'ausencia' => 'Ausencia Justificada'];
+            $tipoTitulo = $tiposTitulo[$datos['vacacion']->tipovacacion] ?? 'Solicitud';
+            ?>
+            <h2 class="text-2xl font-semibold leading-tight">Resolver Solicitud de <?php echo $tipoTitulo; ?> #<?php echo $datos['vacacion']->id; ?></h2>
             <a href="<?php echo RUTA_URL; ?>/Vacaciones/listadoVacaciones" class="bg-gray-500 text-white px-4 py-2 rounded text-sm hover:bg-gray-600">
                 <i class="fas fa-arrow-left mr-1"></i> Volver
             </a>
@@ -88,9 +92,17 @@
                                 <i class="fas fa-times mr-1"></i> Rechazar
                             </button>
                         <?php elseif ($datos['vacacion']->estado === 'aprobada'): ?>
+                            <?php
+                            $tiposCancelar = [
+                                'vacaciones' => ['texto' => 'Cancelar vacaciones', 'confirm' => '¿Cancelar estas vacaciones aprobadas? Se revertirán los días marcados.'],
+                                'baja' => ['texto' => 'Cancelar baja', 'confirm' => '¿Cancelar esta baja aprobada? Se revertirán los días marcados.'],
+                                'ausencia' => ['texto' => 'Cancelar ausencia', 'confirm' => '¿Cancelar esta ausencia aprobada? Se revertirán los días marcados.']
+                            ];
+                            $cancelarInfo = $tiposCancelar[$datos['vacacion']->tipovacacion] ?? $tiposCancelar['vacaciones'];
+                            ?>
                             <button type="submit" name="accion" value="cancelar" class="bg-yellow-600 text-white px-6 py-2 rounded text-sm hover:bg-yellow-700"
-                                    onclick="return confirm('¿Cancelar estas vacaciones aprobadas? Se revertirán los días marcados como vacaciones/baja.')">
-                                <i class="fas fa-ban mr-1"></i> Cancelar vacaciones
+                                    onclick="return confirm('<?php echo $cancelarInfo['confirm']; ?>')">
+                                <i class="fas fa-ban mr-1"></i> <?php echo $cancelarInfo['texto']; ?>
                             </button>
                         <?php endif; ?>
                         <a href="<?php echo RUTA_URL; ?>/Vacaciones/listadoVacaciones" class="bg-gray-500 text-white px-6 py-2 rounded text-sm hover:bg-gray-600">
