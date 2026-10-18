@@ -11,9 +11,13 @@ class ModeloReportesHorario
 
     public function obtenerResumenMensualEmpleado($idEmpleado, $mes, $anio)
     {
-        $this->db->query("SELECT j.fecha, j.estadojornada, j.horastotales, j.completada,
+        $this->db->query("SELECT j.id, j.fecha, j.estadojornada, j.horastotales, j.completada,
+            COALESCE(ch.jornadatipohoras, 8.00) AS jornadatipohoras,
+            COALESCE(ch.horarioentrada, '09:00:00') AS horarioentrada,
+            COALESCE(ch.toleranciaminutos, 5) AS toleranciaminutos,
             (SELECT COUNT(*) FROM fichajes f WHERE f.idjornada = j.id AND f.eliminado = 0) AS numerofichajes
             FROM jornadas j
+            LEFT JOIN configuracionhorario ch ON j.idempleado = ch.idempleado AND ch.eliminado = 0
             WHERE j.idempleado = :idempleado AND MONTH(j.fecha) = :mes AND YEAR(j.fecha) = :anio AND j.eliminado = 0
             ORDER BY j.fecha ASC");
         $this->db->bind(':idempleado', $idEmpleado);
@@ -28,11 +32,13 @@ class ModeloReportesHorario
             COUNT(j.id) AS diasstrabajados,
             SUM(j.horastotales) AS totalhoras,
             SUM(CASE WHEN j.completada = 1 OR j.estadojornada IN ('vacaciones', 'baja', 'ausencia') THEN 1 ELSE 0 END) AS jornadascompletas,
-            SUM(CASE WHEN j.completada = 0 AND j.estadojornada NOT IN ('vacaciones', 'baja', 'ausencia') THEN 1 ELSE 0 END) AS jornadasincompletas
+            SUM(CASE WHEN j.completada = 0 OR j.estadojornada IN ('pendiente_vacaciones', 'pendiente_baja', 'pendiente_ausencia') THEN 1 ELSE 0 END) AS jornadasincompletas,
+            COALESCE(ch.jornadatipohoras, 8.00) AS jornadatipohoras
             FROM jornadas j
             LEFT JOIN usuarios u ON j.idempleado = u.id
+            LEFT JOIN configuracionhorario ch ON j.idempleado = ch.idempleado AND ch.eliminado = 0
             WHERE MONTH(j.fecha) = :mes AND YEAR(j.fecha) = :anio AND j.eliminado = 0
-            GROUP BY j.idempleado, u.nombre, u.apellidos
+            GROUP BY j.idempleado, u.nombre, u.apellidos, ch.jornadatipohoras
             ORDER BY u.nombre ASC");
         $this->db->bind(':mes', $mes);
         $this->db->bind(':anio', $anio);
@@ -82,7 +88,7 @@ class ModeloReportesHorario
         $this->db->query("SELECT MONTH(j.fecha) AS mes, COUNT(j.id) AS diasstrabajados,
             SUM(j.horastotales) AS totalhoras,
             SUM(CASE WHEN j.completada = 1 OR j.estadojornada IN ('vacaciones', 'baja', 'ausencia') THEN 1 ELSE 0 END) AS completas,
-            SUM(CASE WHEN j.completada = 0 AND j.estadojornada NOT IN ('vacaciones', 'baja', 'ausencia') THEN 1 ELSE 0 END) AS incompletas
+            SUM(CASE WHEN j.completada = 0 AND j.estadojornada NOT IN ('vacaciones', 'baja', 'ausencia', 'pendiente_vacaciones', 'pendiente_baja', 'pendiente_ausencia') THEN 1 ELSE 0 END) AS incompletas
             FROM jornadas j
             WHERE j.idempleado = :idempleado AND YEAR(j.fecha) = :anio AND j.eliminado = 0
             GROUP BY MONTH(j.fecha)
@@ -110,4 +116,5 @@ class ModeloReportesHorario
             ORDER BY u.nombre ASC");
         return $this->db->registros();
     }
+
 }

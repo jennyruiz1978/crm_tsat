@@ -9,7 +9,8 @@ class Clientes extends Controlador
         $this->ModelClientes = $this->modelo('ModeloClientes');
         $this->ModelFacturasCliente = $this->modelo('ModeloFacturasCliente');
         $this->ModelCuentasBancarias = $this->modelo('ModeloCuentasBancarias');   
-        $this->ModelIncidencias = $this->modelo('ModeloIncidencias');    
+        $this->ModelIncidencias = $this->modelo('ModeloIncidencias');   
+		$this->modeloUsuario = $this->modelo('Usuario');
         
         if(file_get_contents("php://input")){
             $payload = file_get_contents("php://input");    
@@ -307,11 +308,14 @@ class Clientes extends Controlador
                 foreach (json_decode($datos->tecnicos) as $key) {                   
                     $nombreTecnico = $this->nombreTecnicoPorId($key);                    
 
-                    $fila .= '<tr>
-                                <td width="20%"><input readonly name="codigoTecnico" value="'.$nombreTecnico->codigotecnico.'" style="width: 100%;"></td>
-                                <td width="60%">'.$nombreTecnico->nombre. ' ' .$nombreTecnico->apellidos. '</td>
-                                <td width="20%"><a href="" class="eliminarTecnico"><i class="fas fa-user-minus" style="color:red;"></i></a></td>
-                            </tr>';
+                    if ($nombreTecnico && $nombreTecnico->activo == 1) {
+
+                        $fila .= '<tr>
+                                    <td width="20%"><input readonly name="codigoTecnico" value="'.$nombreTecnico->codigotecnico.'" style="width: 100%;"></td>
+                                    <td width="60%">'.$nombreTecnico->nombre. ' ' .$nombreTecnico->apellidos. '</td>
+                                    <td width="20%"><a href="" class="eliminarTecnico"><i class="fas fa-user-minus" style="color:red;"></i></a></td>
+                                </tr>';
+                    }
                 }                
             }
 
@@ -1794,6 +1798,11 @@ class Clientes extends Controlador
     public function crearUsuariosDesdeClienteEquipos($datos,$idEquipo)
     {            
         foreach ($datos['crearUsuarios'] as $key) {
+			
+			if (!empty($key['email']) && $this->modeloUsuario->existeCorreoActivo($key['email'])) {
+            	continue;
+        	}
+			
             $arr = [];   
             $arr[] = $idEquipo;
             $jsonEquipo = json_encode($arr);
@@ -1813,9 +1822,9 @@ class Clientes extends Controlador
     public function enviarEmailConfirmacionCreacionUsuario($email,$idsUsuario)
     {
         //contruyo array con datos de envío:
-        $nombreRemitente = 'InfoMalaga';
+        $nombreRemitente = 'Telesat';
         $emailRemitente = CUENTA_CORREO;
-        $asunto = "Creación de usuario InfoMalaga";
+        $asunto = "Creación de usuario Telesat";
         $emailsDestino = [$email];
         $plantilla = $this->doCurl(RUTA_URL."/public/documentos/plantillasCorreo/plantillabotonContrasenia.php");
                                         
@@ -1830,7 +1839,7 @@ class Clientes extends Controlador
 
         $tipoDoc = '';
         $attachment = '';
-        enviarEmail::enviarEmailDestinatario($nombreRemitente, $emailRemitente, $emailsDestino, $asunto, $message, $attachment, $tipoDoc);
+        return enviarEmail::enviarEmailDestinatario($nombreRemitente, $emailRemitente, $emailsDestino, $asunto, $message, $attachment, $tipoDoc);
 
     }
 
@@ -2631,8 +2640,6 @@ class Clientes extends Controlador
 
     }
 
-    //este metodo pinta el historial de contratos de mantenimiento de un equipo, se llama cada vez que se añade un nuevo contrato o se elimina uno para actualizar la tabla del historial
-    
     private function construirTablaHistorialContratos($idEquipo)
     {
         $datos = $this->ModelClientes->obtenerHistoriaContratosMnttoEquipos($idEquipo);

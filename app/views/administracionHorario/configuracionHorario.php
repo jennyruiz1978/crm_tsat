@@ -17,7 +17,6 @@
                             <th class="px-4 py-3 text-center">Horas Jornada</th>
                             <th class="px-4 py-3 text-center">Entrada</th>
                             <th class="px-4 py-3 text-center">Salida</th>
-                            <th class="px-4 py-3 text-center">Tolerancia (min)</th>
                             <th class="px-4 py-3 text-center">Acciones</th>
                         </tr>
                     </thead>
@@ -40,7 +39,6 @@
                                 <td class="px-4 py-3 text-center" id="horas-<?php echo $emp->idempleado; ?>"><?php echo $emp->jornadatipohoras; ?>h</td>
                                 <td class="px-4 py-3 text-center" id="entrada-<?php echo $emp->idempleado; ?>"><?php echo $emp->horarioentrada ? date('H:i', strtotime($emp->horarioentrada)) : '-'; ?></td>
                                 <td class="px-4 py-3 text-center" id="salida-<?php echo $emp->idempleado; ?>"><?php echo $emp->horariosalida ? date('H:i', strtotime($emp->horariosalida)) : '-'; ?></td>
-                                <td class="px-4 py-3 text-center" id="tolerancia-<?php echo $emp->idempleado; ?>"><?php echo $emp->toleranciaminutos; ?> min</td>
                                 <td class="px-4 py-3 text-center">
                                     <button onclick="editarConfig(<?php echo $emp->idempleado; ?>, '<?php echo htmlspecialchars($emp->nombreempleado, ENT_QUOTES, 'UTF-8'); ?>', <?php echo (int)$emp->debeFichar; ?>, <?php echo $emp->jornadatipohoras; ?>, '<?php echo date('H:i', strtotime($emp->horarioentrada)); ?>', '<?php echo date('H:i', strtotime($emp->horariosalida)); ?>', <?php echo $emp->toleranciaminutos; ?>)"
                                         class="bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600">
@@ -72,7 +70,7 @@
 
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Horas de jornada</label>
-                            <input type="number" name="jornadatipohoras" id="editHoras" step="0.5" min="1" max="12" class="w-full border rounded px-3 py-2 text-sm" value="8">
+                            <input type="number" name="jornadatipohoras" id="editHoras" step="0.5" min="1" max="24" class="w-full border rounded px-3 py-2 text-sm" value="8">
                         </div>
 
                         <div class="mb-4">
@@ -85,10 +83,7 @@
                             <input type="time" name="horariosalida" id="editSalida" class="w-full border rounded px-3 py-2 text-sm">
                         </div>
 
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Tolerancia (minutos)</label>
-                            <input type="number" name="toleranciaminutos" id="editTolerancia" min="0" max="30" class="w-full border rounded px-3 py-2 text-sm" value="5">
-                        </div>
+                        <input type="hidden" name="toleranciaminutos" id="editTolerancia" value="5">
 
                         <div class="flex gap-3">
                             <button type="submit" class="bg-violeta-oscuro text-white px-6 py-2 rounded text-sm hover:bg-purple-800">

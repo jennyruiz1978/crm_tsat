@@ -4,10 +4,11 @@
 CRM Telesat - Sistema de gestión de incidencias para telecomunicaciones con nueva funcionalidad de Control Horario y Vacaciones (RDL 8/2019 español).
 
 ## Stack Tecnológico
-- **Backend**: PHP 7.x+ (sin Composer, framework MVC custom)
+- **Backend**: PHP 7.x+ (framework MVC custom, Composer para PhpSpreadsheet en `public/`)
 - **Base de datos**: MariaDB 10.4 (puerto 3307), DB: `crm_telesat`
 - **Frontend**: Tailwind CSS, JavaScript ES6 modules, Font Awesome, Select2, Chart.js
 - **PDF**: HTML2PDF (spipu/html2pdf)
+- **Excel**: PhpSpreadsheet (phpoffice/phpspreadsheet) — en `public/vendor/phpoffice/phpspreadsheet/`, wrapper en `app/librerias/ExportImportExcel.php`
 - **Servidor**: XAMPP (Apache + PHP + MySQL)
 
 ## Estructura del Proyecto
@@ -266,17 +267,32 @@ Si un usuario tiene `debeFichar=0` en `configuracionhorario` (o no tiene registr
 
 ### Campos de configuración horario: uso actual
 - `debeFichar`: ✅ Controla acceso a CHOVA (0/1)
-- `jornadatipohoras`: Solo informativo en vista Configuración. Pendiente implementar comparación con horas reales.
-- `horarioentrada`: Solo informativo. Pendiente implementar detección de retrasos.
-- `horariosalida`: Solo informativo. Pendiente implementar detección de salidas anticipadas.
-- `toleranciaminutos`: Solo informativo. Pendiente implementar en cálculo de retrasos.
+- `jornadatipohoras`: ✅ Usado en reportes (Horas esp., Diferencia). Valores por defecto via COALESCE (8.00).
+- `horarioentrada`: Solo informativo. Columna oculta en vista (preservada como hidden input). Pendiente detección de retrasos.
+- `horariosalida`: Solo informativo. Columna oculta en vista (preservada como hidden input). Pendiente detección de salidas anticipadas.
+- `toleranciaminutos`: Oculto de la vista (preservado como hidden input). Default 5 minutos. Pendiente cálculo de retrasos.
+
+### Exportación de Reportes — ✅ Completado (Sesión 2026-08-25)
+
+#### Cambio 1: PDF Empleado → Tabla de jornadas resumidas — ✅ Completado
+- Tabla de fichajes individuales reemplazada por tabla de jornadas con: Fecha, Estado, Horas, Horas esp., Diferencia, Completada
+- PDF Global cambiado de landscape a portrait, font-sizes ajustados
+- Archivo: `app/views/documentos/reporteHorarioEmpleado.php`, `app/views/documentos/reporteHorarioGlobal.php`, `app/controlers/ReportesHorario.php`
+
+#### Cambio 2: Exportar Fichajes → CSV + Excel + PDF — ✅ Completado
+- PhpSpreadsheet instalado via Composer en `public/vendor/`
+- Wrapper `app/librerias/ExportImportExcel.php` creado con método `exportarFichajesExcel()`
+- `selectorReportes.php`: card CSV reemplazado por card con select de formato (CSV/Excel/PDF) + 1 botón "Exportar"
+- `exportarExcel()` y `exportarFichajesPDF()` añadidos en `ReportesHorario.php`
+- `reporteFichajesExport.php` creado como plantilla PDF para fichajes exportados
+- Permisos `/ReportesHorario/exportarExcel` y `/ReportesHorario/exportarFichajesPDF` añadidos en `rolesbase.permisos` (admin id=1)
 
 ## Bugs Abiertos (Pendientes)
 
-### Limpieza post-migración pendiente
-- Eliminar método `migrarConfigHorario()` de `AdministracionHorario.php`
-- Eliminar vista `migrarResultado.php`
-- Eliminar permiso `/AdministracionHorario/migrarConfigHorario` de `rolesbase.permisos`
+### Limpieza post-migración (parcial)
+- ~~Eliminar método `migrarConfigHorario()` de `AdministracionHorario.php`~~ ✅ Completado
+- ~~Eliminar vista `migrarResultado.php`~~ ✅ Completado
+- Eliminar permiso `/AdministracionHorario/migrarConfigHorario` de `rolesbase.permisos` (ver query en PROGRESS.md)
 
 ## Bugs Cerrados
 

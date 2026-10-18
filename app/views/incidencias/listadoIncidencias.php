@@ -16,7 +16,9 @@
                   //control de mensajes de error o éxito:
                   $color ='';
                   if(isset($_SESSION['message'])){
-                    if( strpos( $_SESSION['message'], 'corréctamente' ) != false ){
+                    if( strpos( $_SESSION['message'], 'AVISO' ) !== false ){
+                      $color = 'bg-yellow-600';
+                    } elseif( strpos( $_SESSION['message'], 'corréctamente' ) !== false ){
                       $color = 'bg-green-700';
                     }else{
                       $color = 'bg-blue-700';

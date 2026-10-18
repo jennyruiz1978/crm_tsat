@@ -4,11 +4,11 @@
 
 <div class="w-full overflow-x-hidden border-t flex flex-col">
     <main class="w-full flex-grow p-4 md:p-6">
-        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
             <h2 class="text-2xl font-semibold leading-tight">
                 Detalle de <?php echo $datos['empleado']->nombre . ' ' . $datos['empleado']->apellidos; ?>
             </h2>
-            <a href="<?php echo RUTA_URL; ?>/AdministracionHorario/listadoGlobal" class="bg-gray-500 text-white px-4 py-2 rounded text-sm hover:bg-gray-600">
+            <a href="<?php echo RUTA_URL; ?>/AdministracionHorario/listadoGlobal" class="self-start bg-gray-500 text-white px-4 py-2 rounded text-sm hover:bg-gray-600">
                 <i class="fas fa-arrow-left mr-1"></i> Volver
             </a>
         </div>
@@ -61,7 +61,10 @@
                                     'incompleta' => '<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Incompleta</span>',
                                     'vacaciones' => '<span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">Vacaciones</span>',
                                     'baja' => '<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">Baja</span>',
-                                    'ausencia' => '<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Ausencia</span>'
+                                    'ausencia' => '<span class="bg-pink-100 text-pink-800 text-xs px-2 py-1 rounded">Ausencia</span>',
+                                    'pendiente_vacaciones' => '<span class="bg-purple-50 text-purple-600 border border-purple-200 text-xs px-2 py-1 rounded">Vacaciones (pendiente)</span>',
+                                    'pendiente_baja' => '<span class="bg-red-50 text-red-600 border border-red-200 text-xs px-2 py-1 rounded">Baja (pendiente)</span>',
+                                    'pendiente_ausencia' => '<span class="bg-pink-50 text-pink-600 border border-pink-200 text-xs px-2 py-1 rounded">Ausencia (pendiente)</span>'
                                 ];
                                 echo $estados[$jornada->estadojornada] ?? $jornada->estadojornada;
                                 ?>

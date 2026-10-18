@@ -13,37 +13,17 @@ class enviarEmail {
                           
     public static function enviarEmailDestinatario($nombreRemitente, $emailRemitente, $emailDestinatario,$asunto,$message,$attachment='',$tipoDoc,$datos='') 
     {      
-    //return 1;   
 
       try {
         
-        /*
-        echo"entra";
-        echo"<br>nombreRemitente: <br>";
-        print_r($nombreRemitente);echo"<br><br>";
-        echo"<br>emailRemitente: <br>";
-        print_r($emailRemitente);echo"<br><br>";
-        echo"<br>emailDestinatario: <br>";
-        print_r($emailDestinatario);echo"<br><br>";
-        echo"<br>asunto: <br>";
-        print_r($asunto);echo"<br><br>";
-        echo"<br>message: <br>";
-        print_r($message);echo"<br><br>";
-        echo"<br>attachment: <br>";
-        print_r($attachment);echo"<br><br>";
-        echo"<br>tipoDoc: <br>";
-        print_r($tipoDoc);echo"<br><br>";
-        echo"<br>datos: <br>";
-        print_r($datos='');echo"<br><br>";
-        die;
-        */
-        
-        
-
         $mail = new PHPMailer;  
         // Activo condificacción utf-8
         $mail->CharSet = 'UTF-8';        
-        //$mail->SMTPDebug = 1; // debugging: 1 = errors and messages, 2 = messages only       
+        $mail->SMTPDebug = SMTP_DEBUG_NIVEL;
+        $GLOBALS['smtpDebugLog'] = '';
+        $mail->Debugoutput = function($str, $level) {
+            $GLOBALS['smtpDebugLog'] .= $str . "\n";
+        };        
         $mail->IsSMTP(); // enable SMTP        
         $mail->SMTPAuth = true; // authentication enabled
         $mail->SMTPOptions = array(
@@ -83,23 +63,20 @@ class enviarEmail {
 
         if (!$mail->Send()) {
 
-          /*  
-              echo"<br>1<br><pre>";
-              print_r($mail);
-              die;
-            */
+          $logMsg = date('Y-m-d H:i:s') . " | ERROR ENVIO EMAIL | ErrorInfo: " . $mail->ErrorInfo
+                  . " | Debug: " . $GLOBALS['smtpDebugLog'] . "\n";
+          file_put_contents(RUTA_APP . '/logs/email_errors.log', $logMsg, FILE_APPEND);
           return 0;      
         } else {    
-          /* 
-          echo"<br>2<br>";
-          print_r($mail);
-          die;     
-          */      
+
           return 1;
         }
-       
-                 
+        
+                  
       } catch (Exception $exception) {
+        $logMsg = date('Y-m-d H:i:s') . " | EXCEPCION ENVIO EMAIL | " . $exception->getMessage()
+                . " | Debug: " . (isset($GLOBALS['smtpDebugLog']) ? $GLOBALS['smtpDebugLog'] : '') . "\n";
+        file_put_contents(RUTA_APP . '/logs/email_errors.log', $logMsg, FILE_APPEND);
         return $exception->getMessage();
       }
       
@@ -109,32 +86,16 @@ class enviarEmail {
     {      
     //return 1;   
 
-      try {
-        
-        /*
-        echo"entra";
-        echo"<br>nombreRemitente: <br>";
-        print_r($nombreRemitente);echo"<br><br>";
-        echo"<br>emailRemitente: <br>";
-        print_r($emailRemitente);echo"<br><br>";
-        echo"<br>emailDestinatario: <br>";
-        print_r($emailDestinatario);echo"<br><br>";
-        echo"<br>asunto: <br>";
-        print_r($asunto);echo"<br><br>";
-        echo"<br>message: <br>";
-        print_r($message);echo"<br><br>";
-        //echo"<br>attachment: <br>";
-        //print_r($attachments);echo"<br><br>";
-        echo"<br>tipoDoc: <br>";
-        print_r($tipoDoc);echo"<br><br>";
-        echo"<br>datos: <br>";
-        print_r($datos='');echo"<br><br>";
-        */            
-
+      try {        
+       
         $mail = new PHPMailer;  
         // Activo condificacción utf-8
         $mail->CharSet = 'UTF-8';        
-        $mail->SMTPDebug = 0; // debugging: 1 = errors and messages, 2 = messages only       
+        $mail->SMTPDebug = SMTP_DEBUG_NIVEL;
+        $GLOBALS['smtpDebugLog'] = '';
+        $mail->Debugoutput = function($str, $level) {
+            $GLOBALS['smtpDebugLog'] .= $str . "\n";
+        };
         $mail->IsSMTP(); // enable SMTP        
         $mail->SMTPAuth = true; // authentication enabled
         $mail->SMTPOptions = array(
@@ -174,26 +135,20 @@ class enviarEmail {
         $mail->CharSet = 'UTF-8';
         if (!$mail->Send()) {
 
-              /*
-              echo"<br>entra al if<br><pre>";
-              print_r($mail);
-              die;
-              */
-            
-          return 0;      
-        } else {    
-          
-          /*
-          echo"<br>entra al else<br>";
-          print_r($mail);
-          die;
-          */   
-              
+          $logMsg = date('Y-m-d H:i:s') . " | ERROR ENVIO EMAIL DOCUMENTO | ErrorInfo: " . $mail->ErrorInfo
+                  . " | Debug: " . $GLOBALS['smtpDebugLog'] . "\n";
+          file_put_contents(RUTA_APP . '/logs/email_errors.log', $logMsg, FILE_APPEND);
+          return 0;
+        } else {
+
           return 1;
         }
        
                  
       } catch (Exception $exception) {
+        $logMsg = date('Y-m-d H:i:s') . " | EXCEPCION ENVIO EMAIL DOCUMENTO | " . $exception->getMessage()
+                . " | Debug: " . (isset($GLOBALS['smtpDebugLog']) ? $GLOBALS['smtpDebugLog'] : '') . "\n";
+        file_put_contents(RUTA_APP . '/logs/email_errors.log', $logMsg, FILE_APPEND);
         return $exception->getMessage();
       }
       

@@ -65,9 +65,43 @@ export class creartabla {
         // Inicialmente no hay criterios activos del usuario
         this.sortCriteria = [];
 
-        // Llamar al buscador y cargar la tabla con el orden primigenio
+        // Restaurar estado persistido (búsqueda, filas, página, orden) si existe
+        this.restaurarEstado();
+
+        // Llamar al buscador y cargar la tabla con el orden primigenio (o el restaurado)
         this.buscador(this.destinobuscador, this.segmento);
-        this.rendertabla(); // usará ordenPrimigenio porque sortCriteria está vacío
+        this.rendertabla();
+    }
+
+    _estadoKey() {
+        let key = "tablaClass_estado_" + this.ruta;
+        if (this.id) key += "_" + this.id;
+        if (this.anio) key += "_" + this.anio;
+        return key;
+    }
+
+    guardarEstado() {
+        try {
+            const estado = {
+                busqueda: this.busqueda,
+                filas: this.filas,
+                pagina: this.pagina
+            };
+            sessionStorage.setItem(this._estadoKey(), JSON.stringify(estado));
+        } catch (e) { /* storage no disponible: comportamiento actual */ }
+    }
+
+    restaurarEstado() {
+        try {
+            const raw = sessionStorage.getItem(this._estadoKey());
+            if (!raw) return;
+            const estado = JSON.parse(raw);
+            if (typeof estado !== 'object' || estado === null) return;
+            if (typeof estado.busqueda === 'string') this.busqueda = estado.busqueda;
+            if (!isNaN(parseInt(estado.filas))) this.filas = parseInt(estado.filas);
+            if (!isNaN(parseInt(estado.pagina))) this.pagina = parseInt(estado.pagina);
+            this._restaurado = true;
+        } catch (e) { /* formato corrupto o storage bloqueado: arrancar limpio */ }
     }
 
     rendertabla() {
@@ -88,6 +122,8 @@ export class creartabla {
             this.busqueda,
             this.id, this.anio
         );
+
+        this.guardarEstado();
     }
 
     // Establecer criterio de orden (mantiene orden multiple)
@@ -151,6 +187,17 @@ export class creartabla {
 
                 // Guardar los datos actuales (no se ordenan en memoria)
                 self.datosActuales = datos;
+
+                // Self-healing: si el estado restaurado apunta a una página sin datos, volver a la primera
+                if (self._restaurado) {
+                    if (datos.length === 0 && self.pagina > 0) {
+                        self._restaurado = false;
+                        self.pagina = 0;
+                        self.rendertabla();
+                        return;
+                    }
+                    self._restaurado = false;
+                }
 
                 // Parsear busqueda para rellenar inputs
                 let busquedaObj = {};
@@ -354,7 +401,7 @@ export class creartabla {
 
     buscador(destinobuscador, segmento) {
         let select = "";
-        let valorSeleccionado = 30;
+        let valorSeleccionado = this.filas || 30;
         for (let i = 0; i < segmento.length; i++) {
             const selected = segmento[i] == valorSeleccionado ? "selected" : "";
             select += `<option value="${segmento[i]}" ${selected}>${segmento[i]}</option>`;

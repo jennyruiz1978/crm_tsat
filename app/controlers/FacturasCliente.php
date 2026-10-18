@@ -1320,7 +1320,7 @@ class FacturasCliente extends Controlador {
             
         $envio = enviarEmail::enviarEmailDocumento($nombreRemitente, $emailRemitente, $destinatarios, $asunto, $message, $attachmentArray, $tipoDoc, $datos='');
 
-        if ($envio) {
+        if ($envio === 1) {
             $retorno = true;
             $tipoDocumento = 'factura';
             $this->guardarDatosEnvioFactura($idFactura, $tipoDocumento, $nombreFichero, $destinatarios, $asunto, $contenido, $nombreRemitente, $emailRemitente);

@@ -21,38 +21,56 @@ $mesNombre = $meses[$datos['mes'] - 1];
             <td style="border: 1px solid #ddd; padding: 8px; background: #f0f0f0; font-weight: bold;">Jornadas incompletas</td>
             <td style="border: 1px solid #ddd; padding: 8px;"><?php echo $datos['jornadasIncompletas']; ?></td>
         </tr>
+        <tr>
+            <td style="border: 1px solid #ddd; padding: 8px; background: #e8e0f0; font-weight: bold;">Horas esperadas</td>
+            <td style="border: 1px solid #ddd; padding: 8px;"><?php echo number_format($datos['horasEsperadas'], 2); ?>h</td>
+            <td style="border: 1px solid #ddd; padding: 8px; background: <?php echo $datos['diferencia'] >= 0 ? '#d4edda' : '#f8d7da'; ?>; font-weight: bold;">Diferencia</td>
+            <td style="border: 1px solid #ddd; padding: 8px; <?php echo $datos['diferencia'] >= 0 ? 'color: #155724;' : 'color: #721c24;'; ?>"><?php echo ($datos['diferencia'] >= 0 ? '+' : '') . number_format($datos['diferencia'], 2); ?>h</td>
+        </tr>
     </table>
 
+    <?php
+    $estadosPdf = [
+        'abierta' => ['bg' => '#dbeafe', 'color' => '#1e40af', 'label' => 'Abierta'],
+        'cerrada' => ['bg' => '#dcfce7', 'color' => '#166534', 'label' => 'Cerrada'],
+        'incompleta' => ['bg' => '#fef9c3', 'color' => '#854d0e', 'label' => 'Incompleta'],
+        'vacaciones' => ['bg' => '#f3e8ff', 'color' => '#6b21a8', 'label' => 'Vacaciones'],
+        'baja' => ['bg' => '#fee2e2', 'color' => '#991b1b', 'label' => 'Baja'],
+        'ausencia' => ['bg' => '#fce7f3', 'color' => '#9d174d', 'label' => 'Ausencia'],
+        'pendiente_vacaciones' => ['bg' => '#faf5ff', 'color' => '#7c3aed', 'label' => 'Vac. (pend.)', 'border' => '#c4b5fd'],
+        'pendiente_baja' => ['bg' => '#fef2f2', 'color' => '#dc2626', 'label' => 'Baja (pend.)', 'border' => '#fca5a5'],
+        'pendiente_ausencia' => ['bg' => '#fdf2f8', 'color' => '#db2777', 'label' => 'Aus. (pend.)', 'border' => '#f9a8d4'],
+    ];
+    ?>
     <table style="width: 100%; border-collapse: collapse;">
         <thead>
             <tr style="background: #4a1a6b; color: white;">
-                <th style="border: 1px solid #4a1a6b; padding: 6px; font-size: 10px; text-align: left;">Fecha</th>
-                <th style="border: 1px solid #4a1a6b; padding: 6px; font-size: 10px; text-align: left;">Hora</th>
-                <th style="border: 1px solid #4a1a6b; padding: 6px; font-size: 10px; text-align: center;">Tipo</th>
-                <th style="border: 1px solid #4a1a6b; padding: 6px; font-size: 10px; text-align: center;">Corregido</th>
-                <th style="border: 1px solid #4a1a6b; padding: 6px; font-size: 10px; text-align: left;">Observaciones</th>
+                <th style="border: 1px solid #4a1a6b; padding: 6px; font-size: 11px; text-align: left;">Fecha</th>
+                <th style="border: 1px solid #4a1a6b; padding: 6px; font-size: 11px; text-align: center;">Estado</th>
+                <th style="border: 1px solid #4a1a6b; padding: 6px; font-size: 11px; text-align: center;">Horas</th>
+                <th style="border: 1px solid #4a1a6b; padding: 6px; font-size: 11px; text-align: center;">Horas esp.</th>
+                <th style="border: 1px solid #4a1a6b; padding: 6px; font-size: 11px; text-align: center;">Diferencia</th>
+                <th style="border: 1px solid #4a1a6b; padding: 6px; font-size: 11px; text-align: center;">Completada</th>
             </tr>
         </thead>
         <tbody>
-            <?php $fechaAnterior = ''; ?>
-            <?php foreach ($datos['fichajes'] as $f): ?>
-                <?php $fechaActual = date('d/m/Y', strtotime($f->fechahora)); ?>
-                <?php if ($fechaActual !== $fechaAnterior): ?>
-                    <?php if ($fechaAnterior !== ''): ?>
-                        <tr><td colspan="5" style="padding: 4px 0;"></td></tr>
-                    <?php endif; ?>
-                    <tr style="background: #e8e0f0;">
-                        <td colspan="5" style="border: 1px solid #ddd; padding: 4px 6px; font-weight: bold; font-size: 10px;"><?php echo $fechaActual; ?></td>
-                    </tr>
-                <?php endif; ?>
+            <?php foreach ($datos['resumen'] as $jornada): ?>
+                <?php
+                $estado = $estadosPdf[$jornada->estadojornada] ?? ['bg' => '#f3f4f6', 'color' => '#374151', 'label' => ucfirst($jornada->estadojornada)];
+                $diferenciaJornada = $jornada->horastotales - $jornada->jornadatipohoras;
+                $completada = $jornada->completada || in_array($jornada->estadojornada, ['vacaciones', 'baja', 'ausencia']);
+                $borderStyle = isset($estado['border']) ? 'border: 2px solid ' . $estado['border'] . ';' : 'border: none;';
+                ?>
                 <tr>
-                    <td style="border: 1px solid #ddd; padding: 4px 6px; font-size: 9px;"><?php echo $fechaActual; ?></td>
-                    <td style="border: 1px solid #ddd; padding: 4px 6px; font-size: 9px;"><?php echo date('H:i', strtotime($f->fechahora)); ?></td>
-                    <td style="border: 1px solid #ddd; padding: 4px 6px; font-size: 9px; text-align: center;"><?php echo ucfirst($f->tipofichaje); ?></td>
-                    <td style="border: 1px solid #ddd; padding: 4px 6px; font-size: 9px; text-align: center;"><?php echo $f->corregido ? 'Sí' : 'No'; ?></td>
-                    <td style="border: 1px solid #ddd; padding: 4px 6px; font-size: 9px;"><?php echo $f->observaciones ?? '-'; ?></td>
+                    <td style="border: 1px solid #ddd; padding: 5px 6px; font-size: 12px;"><?php echo date('d/m/Y', strtotime($jornada->fecha)); ?></td>
+                    <td style="border: 1px solid #ddd; padding: 5px 6px; font-size: 12px; text-align: center;">
+                        <span style="display: inline-block; padding: 2px 6px; border-radius: 3px; background: <?php echo $estado['bg']; ?>; color: <?php echo $estado['color']; ?>; font-size: 10px; <?php echo $borderStyle; ?>"><?php echo $estado['label']; ?></span>
+                    </td>
+                    <td style="border: 1px solid #ddd; padding: 5px 6px; font-size: 12px; text-align: center;"><?php echo number_format($jornada->horastotales, 2); ?>h</td>
+                    <td style="border: 1px solid #ddd; padding: 5px 6px; font-size: 12px; text-align: center;"><?php echo number_format($jornada->jornadatipohoras, 2); ?>h</td>
+                    <td style="border: 1px solid #ddd; padding: 5px 6px; font-size: 12px; text-align: center; <?php echo $diferenciaJornada >= 0 ? 'color: #155724;' : 'color: #721c24;'; ?>"><?php echo ($diferenciaJornada >= 0 ? '+' : '') . number_format($diferenciaJornada, 2); ?>h</td>
+                    <td style="border: 1px solid #ddd; padding: 5px 6px; font-size: 12px; text-align: center;"><?php echo $completada ? '&#10003;' : '&#10007;'; ?></td>
                 </tr>
-                <?php $fechaAnterior = $fechaActual; ?>
             <?php endforeach; ?>
         </tbody>
     </table>

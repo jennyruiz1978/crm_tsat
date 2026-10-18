@@ -4,13 +4,13 @@
 
 <div class="w-full overflow-x-hidden border-t flex flex-col">
     <main class="w-full flex-grow p-4 md:p-6">
-        <div class="flex items-center justify-between mb-4">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
             <?php
             $tiposTitulo = ['vacaciones' => 'Vacaciones', 'baja' => 'Baja Médica', 'ausencia' => 'Ausencia Justificada'];
             $tipoTitulo = $tiposTitulo[$datos['vacacion']->tipovacacion] ?? 'Solicitud';
             ?>
             <h2 class="text-2xl font-semibold leading-tight">Resolver Solicitud de <?php echo $tipoTitulo; ?> #<?php echo $datos['vacacion']->id; ?></h2>
-            <a href="<?php echo RUTA_URL; ?>/Vacaciones/listadoVacaciones" class="bg-gray-500 text-white px-4 py-2 rounded text-sm hover:bg-gray-600">
+            <a href="<?php echo RUTA_URL; ?>/Vacaciones/listadoVacaciones" class="self-start bg-gray-500 text-white px-4 py-2 rounded text-sm hover:bg-gray-600">
                 <i class="fas fa-arrow-left mr-1"></i> Volver
             </a>
         </div>

@@ -102,18 +102,23 @@ class ReportesHorario extends Controlador
         $fichajes = $this->ModelReportes->obtenerDetalleFichajesMensual($idEmpleado, $mes, $anio);
 
         $horasTotales = 0;
+        $horasEsperadas = 0;
         $diasTrabajados = count($resumen);
         $jornadasCompletas = 0;
         $jornadasIncompletas = 0;
 
         foreach ($resumen as $jornada) {
             $horasTotales += $jornada->horastotales;
+            $horasEsperadas += $jornada->jornadatipohoras;
+
             if ($jornada->completada || in_array($jornada->estadojornada, ['vacaciones', 'baja', 'ausencia'])) {
                 $jornadasCompletas++;
             } else {
                 $jornadasIncompletas++;
             }
         }
+
+        $diferencia = $horasTotales - $horasEsperadas;
 
         $datos = [
             'empleado' => $empleado,
@@ -122,6 +127,8 @@ class ReportesHorario extends Controlador
             'mes' => $mes,
             'anio' => $anio,
             'horasTotales' => $horasTotales,
+            'horasEsperadas' => $horasEsperadas,
+            'diferencia' => $diferencia,
             'diasTrabajados' => $diasTrabajados,
             'jornadasCompletas' => $jornadasCompletas,
             'jornadasIncompletas' => $jornadasIncompletas,
@@ -149,18 +156,23 @@ class ReportesHorario extends Controlador
         $fichajes = $this->ModelReportes->obtenerDetalleFichajesMensual($idEmpleado, $mes, $anio);
 
         $horasTotales = 0;
+        $horasEsperadas = 0;
         $diasTrabajados = count($resumen);
         $jornadasCompletas = 0;
         $jornadasIncompletas = 0;
 
         foreach ($resumen as $jornada) {
             $horasTotales += $jornada->horastotales;
+            $horasEsperadas += $jornada->jornadatipohoras;
+
             if ($jornada->completada || in_array($jornada->estadojornada, ['vacaciones', 'baja', 'ausencia'])) {
                 $jornadasCompletas++;
             } else {
                 $jornadasIncompletas++;
             }
         }
+
+        $diferencia = $horasTotales - $horasEsperadas;
 
         $datos = [
             'empleado' => $empleado,
@@ -169,6 +181,8 @@ class ReportesHorario extends Controlador
             'mes' => $mes,
             'anio' => $anio,
             'horasTotales' => $horasTotales,
+            'horasEsperadas' => $horasEsperadas,
+            'diferencia' => $diferencia,
             'diasTrabajados' => $diasTrabajados,
             'jornadasCompletas' => $jornadasCompletas,
             'jornadasIncompletas' => $jornadasIncompletas,
@@ -195,21 +209,29 @@ class ReportesHorario extends Controlador
         $resumen = $this->ModelReportes->obtenerResumenMensualGlobal($mes, $anio);
 
         $horasTotalesEmpresa = 0;
+        $horasEsperadasTotal = 0;
         $totalJornadasCompletas = 0;
         $totalJornadasIncompletas = 0;
         $totalEmpleados = count($resumen);
 
         foreach ($resumen as $emp) {
             $horasTotalesEmpresa += $emp->totalhoras;
+            $emp->horasEsperadas = $emp->jornadatipohoras * $emp->diasstrabajados;
+            $emp->diferencia = $emp->totalhoras - $emp->horasEsperadas;
+            $horasEsperadasTotal += $emp->horasEsperadas;
             $totalJornadasCompletas += $emp->jornadascompletas;
             $totalJornadasIncompletas += $emp->jornadasincompletas;
         }
+
+        $diferenciaTotal = $horasTotalesEmpresa - $horasEsperadasTotal;
 
         $datos = [
             'resumen' => $resumen,
             'mes' => $mes,
             'anio' => $anio,
             'horasTotalesEmpresa' => $horasTotalesEmpresa,
+            'horasEsperadasTotal' => $horasEsperadasTotal,
+            'diferenciaTotal' => $diferenciaTotal,
             'totalJornadasCompletas' => $totalJornadasCompletas,
             'totalJornadasIncompletas' => $totalJornadasIncompletas,
             'totalEmpleados' => $totalEmpleados
@@ -226,32 +248,123 @@ class ReportesHorario extends Controlador
         $resumen = $this->ModelReportes->obtenerResumenMensualGlobal($mes, $anio);
 
         $horasTotalesEmpresa = 0;
+        $horasEsperadasTotal = 0;
         $totalJornadasCompletas = 0;
         $totalJornadasIncompletas = 0;
         $totalEmpleados = count($resumen);
 
         foreach ($resumen as $emp) {
             $horasTotalesEmpresa += $emp->totalhoras;
+            $emp->horasEsperadas = $emp->jornadatipohoras * $emp->diasstrabajados;
+            $emp->diferencia = $emp->totalhoras - $emp->horasEsperadas;
+            $horasEsperadasTotal += $emp->horasEsperadas;
             $totalJornadasCompletas += $emp->jornadascompletas;
             $totalJornadasIncompletas += $emp->jornadasincompletas;
         }
+
+        $diferenciaTotal = $horasTotalesEmpresa - $horasEsperadasTotal;
 
         $datos = [
             'resumen' => $resumen,
             'mes' => $mes,
             'anio' => $anio,
             'horasTotalesEmpresa' => $horasTotalesEmpresa,
+            'horasEsperadasTotal' => $horasEsperadasTotal,
+            'diferenciaTotal' => $diferenciaTotal,
             'totalJornadasCompletas' => $totalJornadasCompletas,
             'totalJornadasIncompletas' => $totalJornadasIncompletas,
             'totalEmpleados' => $totalEmpleados
         ];
 
         generarPdf::documentoPDFExportar(
-            'L', 'A4', 'es', true, 'UTF-8',
+            'P', 'A4', 'es', true, 'UTF-8',
             array(5, 5, 5, 5),
             true,
             'documentos',
             'reporteHorarioGlobal.php',
+            $datos
+        );
+    }
+
+    public function exportarExcel()
+    {
+        $fechaInicio = isset($_GET['fechainicio']) ? $_GET['fechainicio'] : date('Y-m-01');
+        $fechaFin = isset($_GET['fechafin']) ? $_GET['fechafin'] : date('Y-m-t');
+        $idEmpleado = isset($_GET['idempleado']) && $_GET['idempleado'] !== '' ? (int)$_GET['idempleado'] : null;
+
+        $fichajes = $this->ModelReportes->obtenerFichajesParaCSV($fechaInicio, $fechaFin, $idEmpleado);
+
+        require_once(RUTA_APP . '/helpers/ControlHorarioHelper.php');
+
+        $datosAuditoria = ControlHorarioHelper::generarDatosAuditoria(
+            'exportar_excel_fichajes',
+            'reportes',
+            null,
+            null,
+            ['fechainicio' => $fechaInicio, 'fechafin' => $fechaFin, 'idempleado' => $idEmpleado]
+        );
+        $this->ModelAuditoria->registrarAccion($datosAuditoria);
+
+        $cabeceras = ['Fecha/Hora', 'Empleado', 'Tipo', 'Observaciones'];
+
+        $filas = [];
+        foreach ($fichajes as $f) {
+            $filas[] = [
+                $f->fechahora,
+                $f->nombreempleado ?? 'Desconocido',
+                ucfirst($f->tipofichaje),
+                $f->observaciones ?? ''
+            ];
+        }
+
+        $nombreArchivo = 'fichajes_' . $fechaInicio . '_' . $fechaFin . '.xlsx';
+
+        require_once(RUTA_APP . '/librerias/ExportImportExcel.php');
+        ExportImportExcel::exportarFichajesExcel($cabeceras, $filas, $nombreArchivo);
+    }
+
+    public function exportarFichajesPDF()
+    {
+        $fechaInicio = isset($_GET['fechainicio']) ? $_GET['fechainicio'] : date('Y-m-01');
+        $fechaFin = isset($_GET['fechafin']) ? $_GET['fechafin'] : date('Y-m-t');
+        $idEmpleado = isset($_GET['idempleado']) && $_GET['idempleado'] !== '' ? (int)$_GET['idempleado'] : null;
+
+        $fichajes = $this->ModelReportes->obtenerFichajesParaCSV($fechaInicio, $fechaFin, $idEmpleado);
+
+        require_once(RUTA_APP . '/helpers/ControlHorarioHelper.php');
+
+        $datosAuditoria = ControlHorarioHelper::generarDatosAuditoria(
+            'exportar_pdf_fichajes',
+            'reportes',
+            null,
+            null,
+            ['fechainicio' => $fechaInicio, 'fechafin' => $fechaFin, 'idempleado' => $idEmpleado]
+        );
+        $this->ModelAuditoria->registrarAccion($datosAuditoria);
+
+        $empleadoNombre = 'Todos los empleados';
+        if ($idEmpleado !== null) {
+            require_once(RUTA_APP . '/models/ModeloLogin.php');
+            $modeloLogin = $this->modelo('ModeloLogin');
+            $empleado = $modeloLogin->datosUsuarioPorId($idEmpleado);
+            if ($empleado) {
+                $empleadoNombre = $empleado->nombre . ' ' . $empleado->apellidos;
+            }
+        }
+
+        $datos = [
+            'fichajes' => $fichajes,
+            'fechaInicio' => $fechaInicio,
+            'fechaFin' => $fechaFin,
+            'empleadoNombre' => $empleadoNombre
+        ];
+
+        generarPdf::documentoPDFExportar(
+            'P', 'A4', 'es', true, 'UTF-8',
+            array(5, 5, 5, 5),
+            true,
+            'documentos',
+            'reporteFichajesExport.php',
             $datos
         );
     }

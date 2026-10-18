@@ -4,9 +4,9 @@
 
 <div class="w-full overflow-x-hidden border-t flex flex-col">
     <main class="w-full flex-grow p-4 md:p-6">
-        <div class="flex items-center justify-between mb-4">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
             <h2 class="text-2xl font-semibold leading-tight">Mis Solicitudes</h2>
-            <a href="<?php echo RUTA_URL; ?>/ControlHorario/solicitarModificacion" class="bg-violeta-oscuro text-white px-4 py-2 rounded text-sm hover:bg-purple-800">
+            <a href="<?php echo RUTA_URL; ?>/ControlHorario/solicitarModificacion" class="self-start bg-violeta-oscuro text-white px-4 py-2 rounded text-sm hover:bg-purple-800">
                 <i class="fas fa-plus mr-1"></i> Nueva solicitud
             </a>
         </div>

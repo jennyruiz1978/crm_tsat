@@ -268,13 +268,25 @@ class Usuarios extends Controlador
                 "caducidadenlace" => $caducidadEnlace
             ];         
             
+			if ($this->modeloUsuarios->existeCorreoActivo($_POST['correo'])) {
+				$_SESSION['message'] = 'Ya existe un usuario activo con ese correo electrónico.';
+				redireccionar('/Usuarios');
+				return;
+			}
+			
             $ins = $this->modeloUsuarios->agregarUsuario($datosInsertar);
+            
             if ($ins && $ins >0) {
-                $_SESSION['message'] = 'Se ha creado el usuario corréctamente.';
-                $this->enviarEmailConfirmacionCreacionUsuario($_POST['correo'],$ins,$contra);
-            }else{
+                $resultadoEmail = $this->enviarEmailConfirmacionCreacionUsuario($_POST['correo'], $ins, $contra);
+                if ($resultadoEmail === 1) {
+                    $_SESSION['message'] = 'Se ha creado el usuario corréctamente.';
+                } else {
+                    $_SESSION['message'] = 'AVISO: Se ha creado el usuario, pero el correo de confirmación no se ha podido enviar. Consulte con el administrador.';
+                }
+            } else {
                 $_SESSION['message'] = 'Ha ocurrido un error. No se puede crear el usuario. Consulte con el administrador';
             }
+
         }else{
             $_SESSION['message'] = 'Ha ocurrido un error. No se puede crear el usuario porque faltan datos en el formulario.';
         }             
@@ -284,9 +296,9 @@ class Usuarios extends Controlador
     public function enviarEmailConfirmacionCreacionUsuario($email,$idsUsuario,$pass)
     {
         //contruyo array con datos de envío:
-        $nombreRemitente = 'InfoMalaga';
+        $nombreRemitente = 'Telesat';
         $emailRemitente = CUENTA_CORREO;
-        $asunto = "Creación de usuario InfoMalaga";
+        $asunto = "Creación de usuario Telesat";
         $emailsDestino = [$email];
         $plantilla = $this->doCurl(RUTA_URL."/public/documentos/plantillasCorreo/plantillabotonContrasenia.php");
        
@@ -305,7 +317,19 @@ class Usuarios extends Controlador
 
         $tipoDoc = '';
         $attachment = '';
-        enviarEmail::enviarEmailDestinatario($nombreRemitente, $emailRemitente, $emailsDestino, $asunto, $message, $attachment, $tipoDoc);
+        
+        //enviarEmail::enviarEmailDestinatario($nombreRemitente, $emailRemitente, $emailsDestino, $asunto, $message, $attachment, $tipoDoc);
+
+        //ob_start();
+        $resultado = enviarEmail::enviarEmailDestinatario($nombreRemitente, $emailRemitente, $emailsDestino, $asunto, $message, $attachment, $tipoDoc);
+        /*
+        $debug = ob_get_clean();
+        if ($resultado !== 1) {
+            $logMsg = date('Y-m-d H:i:s') . " | ERROR ENVIO EMAIL | Resultado: " . var_export($resultado, true) . " | Debug: " . $debug . "\n";
+            file_put_contents(RUTA_APP . '/logs/email_errors.log', $logMsg, FILE_APPEND);
+        }
+        */
+        return $resultado;
 
     }
            
@@ -430,6 +454,11 @@ class Usuarios extends Controlador
                 "recibemails" => $recibeMails
             ];
            
+			if ($this->modeloUsuarios->existeCorreoActivo($_POST['correo'], $_POST['id'])) {
+                $_SESSION['message'] = 'Ya existe un usuario activo con ese correo electrónico.';
+                redireccionar('/Usuarios');
+                return;
+            }
         
             $upd = $this->modeloUsuarios->actualizarUsuario($datosActualizar);
 

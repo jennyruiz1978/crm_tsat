@@ -56,7 +56,7 @@ class ModeloTecnicos{
         $apellidos = $datos['apellidos'];
         $email = $datos['email'];
         $activo = $datos['activo'];        
-        $telefono = $datos['telefono'];
+        $telefono = (int) preg_replace('/[^0-9]/', '', (string) $datos['telefono']);
         $rol = 2;
         $contra = $datos['contrasenia'];
         $estado = 1;
@@ -99,7 +99,7 @@ class ModeloTecnicos{
         $nombres = $datos['nombres'];
         $apellidos = $datos['apellidos'];
         $email = $datos['email'];        
-        $telefono = $datos['telefono'];
+        $telefono = (int) preg_replace('/[^0-9]/', '', (string) $datos['telefono']);
         $contra = $datos['contrasenia'];
         $editarTiempo = $datos['editarTiempo']; 
         $verTodas = $datos['verTodas'];
@@ -140,6 +140,18 @@ class ModeloTecnicos{
         }else {
             return 0;
         }
+    }
+
+    public function quitarTecnicoDeClientes($idTecnico)
+    {
+        do {
+            $this->db->query("UPDATE clientes 
+                            SET tecnicos = JSON_REMOVE(tecnicos, JSON_UNQUOTE(JSON_SEARCH(tecnicos, 'one', '$idTecnico'))) 
+                            WHERE JSON_SEARCH(tecnicos, 'one', '$idTecnico') IS NOT NULL ");
+            $this->db->execute();
+        } while ($this->db->rowCount() > 0);
+
+        return 1;
     }
 
     public function obtenerListaClientesActivo(){

@@ -85,7 +85,7 @@ class ModeloControlHorario
         $jornada = $this->obtenerJornadaPorId($idJornada);
         if (!$jornada) return;
 
-        if (in_array($jornada->estadojornada, ['vacaciones', 'baja', 'ausencia'])) return;
+        if (in_array($jornada->estadojornada, ['vacaciones', 'baja', 'ausencia', 'pendiente_vacaciones', 'pendiente_baja', 'pendiente_ausencia'])) return;
 
         $fichajes = $this->obtenerFichajesJornadaActivos($idJornada);
         $fechaHoy = date('Y-m-d');
@@ -217,7 +217,7 @@ class ModeloControlHorario
         return $this->db->registros();
     }
 
-    public function obtenerEmpleadosQueFichan()
+    public function obtenerEmpleadosNoClienteActivos()
     {
         $this->db->query("SELECT u.id, u.nombre, u.apellidos, u.rol, ch.debeFichar
             FROM usuarios u

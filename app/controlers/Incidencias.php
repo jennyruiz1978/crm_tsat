@@ -602,10 +602,22 @@ class Incidencias extends Controlador {
                    }
                 }
                 
-                $this->enviarEmailAcuseDeReciboCliente($ins,$datos);
-                $this->enviarEmailALosTecnicosAsignadosAlCliente($ins,$datos);                
+                $fallosAcuse = $this->enviarEmailAcuseDeReciboCliente($ins,$datos);
+                $fallosTecnicos = $this->enviarEmailALosTecnicosAsignadosAlCliente($ins,$datos);
+
+                if (empty($fallosAcuse) && empty($fallosTecnicos)) {
+                    $_SESSION['message'] = 'Se ha registrado la solicitud corréctamente.';
+                } else {
+                    $detalle = [];
+                    if (!empty($fallosAcuse)) {
+                        $detalle[] = 'acuse de recibo al cliente ('.implode(', ', $fallosAcuse).')';
+                    }
+                    if (!empty($fallosTecnicos)) {
+                        $detalle[] = 'notificación a técnicos ('.implode(', ', $fallosTecnicos).')';
+                    }
+                    $_SESSION['message'] = 'AVISO: Se ha registrado la solicitud, pero no se pudo enviar: '.implode('; ', $detalle).'. Consulte con el administrador.';
+                }
                 
-                $_SESSION['message'] = 'Se ha registrado la solicitud corréctamente.';
             }else{
                 $_SESSION['message'] = 'Ha ocurrido un error. No se puede registrar la solicitud porque falta completar datos en el formulario.';
             }
@@ -698,19 +710,20 @@ class Incidencias extends Controlador {
 
     public function enviarEmailAcuseDeReciboCliente($idIncidencia,$datos)
     {        
+        $correosFallidos = [];
+
         $plantilla = $this->doCurl(RUTA_URL."/public/documentos/plantillasCorreo/plantillaboton.php");
         
         $nombreRemitente = 'Telesat';
         $emailRemitente = CUENTA_CORREO;
         $asunto = "Nueva solicitud de servicio";
-       
+        
             $usuariosAsignadosAlEquipo = $this->ModelIncidencias->obtenerCorreosUsuariosAsignadosNoSupervisor($datos['idequipo']);
-            $emailsDestino = [];
             if (count($usuariosAsignadosAlEquipo)>0) {
                 
                 foreach ($usuariosAsignadosAlEquipo as $key) {
                     if (isset($key->correo) && $key->correo!='' && $key->recibemails ) {
-                        $emailsDestino[] = $key->correo;
+                        $emailsDestino = [$key->correo];
 
                         $fecha = date('d-m-Y H:i:s',strtotime($datos['creacion']));
                         $enlace = 'Haz click en el enlace para ver la solicitud.';
@@ -726,17 +739,22 @@ class Incidencias extends Controlador {
                         $tipoDoc = '';
                         $attachment = '';
                     
-                        enviarEmail::enviarEmailDestinatario($nombreRemitente, $emailRemitente, $emailsDestino, $asunto, $message, $attachment, $tipoDoc);
+                        $resultado = enviarEmail::enviarEmailDestinatario($nombreRemitente, $emailRemitente, $emailsDestino, $asunto, $message, $attachment, $tipoDoc);
+                        if ($resultado !== 1) {
+                            $correosFallidos[] = $key->correo;
+                        }
                         
-                    }
- 
+                    }  
                 }
             }
-        
+
+        return $correosFallidos;
     }
 
     public function enviarEmailALosTecnicosAsignadosAlCliente($idIncidencia,$datos)
     {                
+        $correosFallidos = [];
+
         $plantilla = $this->doCurl(RUTA_URL."/public/documentos/plantillasCorreo/plantillaboton.php");
 
         $nombreRemitente = 'Telesat';
@@ -745,13 +763,12 @@ class Incidencias extends Controlador {
         $user = $datos['nombreUsuario'];                     
         
             $idsTecnicos = json_decode($datos['tecnicos']);
-            $emailsDestino = [];
             if ($idsTecnicos && count($idsTecnicos)>0) {
                 foreach ($idsTecnicos as $key) {
                     
                     $correoTecnico = $this->ModelIncidencias->obtenerCorreoDesdeIdusuario($key);
                     if (isset($correoTecnico->correo) && $correoTecnico->correo !='' && $correoTecnico->recibemails == 1) {
-                        $emailsDestino[] = $correoTecnico->correo;
+                        $emailsDestino = [$correoTecnico->correo];
 
                         //construyo cuerpo de mensaje    
                         $fecha = date('d-m-Y H:i:s',strtotime($datos['creacion']));
@@ -767,14 +784,17 @@ class Incidencias extends Controlador {
                     
                         $tipoDoc = '';
                         $attachment = '';
-                                  
-                        enviarEmail::enviarEmailDestinatario($nombreRemitente, $emailRemitente, $emailsDestino, $asunto, $message, $attachment, $tipoDoc);
+                                   
+                        $resultado = enviarEmail::enviarEmailDestinatario($nombreRemitente, $emailRemitente, $emailsDestino, $asunto, $message, $attachment, $tipoDoc);
+                        if ($resultado !== 1) {
+                            $correosFallidos[] = $correoTecnico->correo;
+                        }
                         
                     }                   
                 }
             }            
-        
-  
+
+        return $correosFallidos;
     }
 
 
@@ -2267,12 +2287,24 @@ class Incidencias extends Controlador {
 
                 $ins = $this->ModelIncidencias->insertarNuevaSolicitud($datos);
                 if ($ins >0) {
-                    $_SESSION['message'] = 'Se ha registrado la solicitud corréctamente.';
                     if (isset($_FILES['ficheroCrearIncidencia']) && count($_FILES['ficheroCrearIncidencia']['size']) >0) {
                         $this->construirDatosFicherosAInsertar($_FILES,$ins);
                     }                                        
-                    $this->enviarEmailAcuseDeReciboCliente($ins,$datos);
-                    $this->enviarEmailALosTecnicosAsignadosAlCliente($ins,$datos);
+                    $fallosAcuse = $this->enviarEmailAcuseDeReciboCliente($ins,$datos);
+                    $fallosTecnicos = $this->enviarEmailALosTecnicosAsignadosAlCliente($ins,$datos);
+
+                    if (empty($fallosAcuse) && empty($fallosTecnicos)) {
+                        $_SESSION['message'] = 'Se ha registrado la solicitud corréctamente.';
+                    } else {
+                        $detalle = [];
+                        if (!empty($fallosAcuse)) {
+                            $detalle[] = 'acuse de recibo al cliente ('.implode(', ', $fallosAcuse).')';
+                        }
+                        if (!empty($fallosTecnicos)) {
+                            $detalle[] = 'notificación a técnicos ('.implode(', ', $fallosTecnicos).')';
+                        }
+                        $_SESSION['message'] = 'AVISO: Se ha registrado la solicitud, pero no se pudo enviar: '.implode('; ', $detalle).'. Consulte con el administrador.';
+                    }
                 }else{
                     $_SESSION['message'] = $msgError;
                 }
@@ -3395,7 +3427,7 @@ class Incidencias extends Controlador {
         $envio = enviarEmail::enviarEmailDocumento($nombreRemitente, $emailRemitente, $destinatarios, $asunto, $message, $attachmentArray, $tipoDoc, $datos='');
         
 
-        if ($envio) {
+        if ($envio === 1) {
             $retorno = true;
             $tipoDocumento = 'parte';
             $this->guardarDatosEnvioParte($idIncidencia, $tipoDocumento, $nombreFichero, $destinatarios, $asunto, $contenido, $nombreRemitente, $emailRemitente);

@@ -129,6 +129,18 @@ class Usuario{
         }
     }
 
+	    public function existeCorreoActivo($correo, $excluirId = null)
+    {
+        if ($excluirId) {
+            $this->db->query("SELECT id FROM usuarios WHERE correo = :correo AND activo = 1 AND id != :excluirId");
+            $this->db->bind(':excluirId', $excluirId);
+        } else {
+            $this->db->query("SELECT id FROM usuarios WHERE correo = :correo AND activo = 1");
+        }
+        $this->db->bind(':correo', $correo);
+        $resultado = $this->db->registro();
+        return $resultado ? true : false;
+    }
     /*
     public function obtenerPermisos($id){
         $this->db->query('SELECT menu FROM permisos WHERE idUsuario = :id');

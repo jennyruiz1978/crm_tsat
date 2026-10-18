@@ -343,7 +343,7 @@ class Vacaciones extends Controlador
             } else {
                 $jornadaEliminada = $modeloCH->obtenerJornadaPorEmpleadoYFechaTodo($idEmpleado, $fechaStr);
                 if ($jornadaEliminada) {
-                    $modeloCH->restaurarJornada($jornadaEliminada->id, 'vacaciones');
+                    $modeloCH->restaurarJornada($jornadaEliminada->id, 'pendiente_vacaciones');
                     $jornada = $modeloCH->obtenerJornadaPorEmpleadoYFecha($idEmpleado, $fechaStr);
                 } else {
                     $modeloCH->crearJornada($idEmpleado, $fechaStr);
@@ -353,7 +353,7 @@ class Vacaciones extends Controlador
 
             if (isset($jornada) && $jornada) {
                 $this->db = new Base;
-                $this->db->query("UPDATE jornadas SET estadojornada = 'vacaciones', completada = 1, horastotales = 0 WHERE id = :id");
+                $this->db->query("UPDATE jornadas SET estadojornada = 'pendiente_vacaciones', completada = 0, horastotales = 0 WHERE id = :id");
                 $this->db->bind(':id', $jornada->id);
                 $this->db->execute();
             }
@@ -375,7 +375,7 @@ class Vacaciones extends Controlador
             } else {
                 $jornadaEliminada = $modeloCH->obtenerJornadaPorEmpleadoYFechaTodo($idEmpleado, $fechaStr);
                 if ($jornadaEliminada) {
-                    $modeloCH->restaurarJornada($jornadaEliminada->id, 'baja');
+                    $modeloCH->restaurarJornada($jornadaEliminada->id, 'pendiente_baja');
                     $jornada = $modeloCH->obtenerJornadaPorEmpleadoYFecha($idEmpleado, $fechaStr);
                 } else {
                     $modeloCH->crearJornada($idEmpleado, $fechaStr);
@@ -385,7 +385,7 @@ class Vacaciones extends Controlador
 
             if (isset($jornada) && $jornada) {
                 $this->db = new Base;
-                $this->db->query("UPDATE jornadas SET estadojornada = 'baja', completada = 1, horastotales = 0 WHERE id = :id");
+                $this->db->query("UPDATE jornadas SET estadojornada = 'pendiente_baja', completada = 0, horastotales = 0 WHERE id = :id");
                 $this->db->bind(':id', $jornada->id);
                 $this->db->execute();
             }
@@ -407,7 +407,7 @@ class Vacaciones extends Controlador
             } else {
                 $jornadaEliminada = $modeloCH->obtenerJornadaPorEmpleadoYFechaTodo($idEmpleado, $fechaStr);
                 if ($jornadaEliminada) {
-                    $modeloCH->restaurarJornada($jornadaEliminada->id, 'ausencia');
+                    $modeloCH->restaurarJornada($jornadaEliminada->id, 'pendiente_ausencia');
                     $jornada = $modeloCH->obtenerJornadaPorEmpleadoYFecha($idEmpleado, $fechaStr);
                 } else {
                     $modeloCH->crearJornada($idEmpleado, $fechaStr);
@@ -417,7 +417,7 @@ class Vacaciones extends Controlador
 
             if (isset($jornada) && $jornada) {
                 $this->db = new Base;
-                $this->db->query("UPDATE jornadas SET estadojornada = 'ausencia', completada = 1, horastotales = 0 WHERE id = :id");
+                $this->db->query("UPDATE jornadas SET estadojornada = 'pendiente_ausencia', completada = 0, horastotales = 0 WHERE id = :id");
                 $this->db->bind(':id', $jornada->id);
                 $this->db->execute();
             }
@@ -457,7 +457,7 @@ class Vacaciones extends Controlador
             $fechaStr = $fecha->format('Y-m-d');
             $jornada = $modeloCH->obtenerJornadaPorEmpleadoYFecha($vacacion->idempleado, $fechaStr);
 
-            if ($jornada && ($jornada->estadojornada === 'vacaciones' || $jornada->estadojornada === 'baja' || $jornada->estadojornada === 'ausencia')) {
+            if ($jornada && in_array($jornada->estadojornada, ['vacaciones', 'baja', 'ausencia', 'pendiente_vacaciones', 'pendiente_baja', 'pendiente_ausencia'])) {
                 $this->db = new Base;
                 $this->db->query("UPDATE jornadas SET estadojornada = 'abierta', horastotales = 0, completada = 0 WHERE id = :id");
                 $this->db->bind(':id', $jornada->id);
@@ -478,7 +478,7 @@ class Vacaciones extends Controlador
             $fechaStr = $fecha->format('Y-m-d');
             $jornada = $modeloCH->obtenerJornadaPorEmpleadoYFecha($vacacion->idempleado, $fechaStr);
 
-            if ($jornada && ($jornada->estadojornada === 'vacaciones' || $jornada->estadojornada === 'baja' || $jornada->estadojornada === 'ausencia')) {
+            if ($jornada && in_array($jornada->estadojornada, ['vacaciones', 'baja', 'ausencia', 'pendiente_vacaciones', 'pendiente_baja', 'pendiente_ausencia'])) {
                 $this->db = new Base;
                 $this->db->query("UPDATE jornadas SET estadojornada = 'abierta', horastotales = 0, completada = 0 WHERE id = :id");
                 $this->db->bind(':id', $jornada->id);

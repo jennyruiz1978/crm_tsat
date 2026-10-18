@@ -86,13 +86,13 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
-                    <textarea name="nuevaobservaciones" rows="2" class="w-full border rounded px-3 py-2 text-sm" placeholder="Observaciones opcionales sobre la corrección..."></textarea>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Motivo de la solicitud <span class="text-red-500">*</span></label>
+                    <textarea name="motivo" rows="3" class="w-full border rounded px-3 py-2 text-sm" placeholder="Explique el motivo de la corrección solicitada..." required></textarea>
                 </div>
 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Motivo de la solicitud <span class="text-red-500">*</span></label>
-                    <textarea name="motivo" rows="3" class="w-full border rounded px-3 py-2 text-sm" placeholder="Explique el motivo de la corrección solicitada..." required></textarea>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+                    <textarea name="nuevaobservaciones" rows="2" class="w-full border rounded px-3 py-2 text-sm" placeholder="Observaciones opcionales sobre la corrección..."></textarea>
                 </div>
 
                 <div class="flex gap-3">

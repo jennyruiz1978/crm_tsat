@@ -5,7 +5,7 @@
 <div class="w-full overflow-x-hidden border-t flex flex-col">
     <main class="w-full flex-grow p-4 md:p-6">
         <div class="flex items-center justify-between mb-4">
-            <h2 class="text-2xl font-semibold leading-tight">Solicitudes de Modificación</h2>
+            <h2 class="text-2xl font-semibold leading-tight">Solicitudes de Modificación de fichajes</h2>
             <a href="<?php echo RUTA_URL; ?>/AdministracionHorario/listadoGlobal" class="bg-gray-500 text-white px-4 py-2 rounded text-sm hover:bg-gray-600">
                 <i class="fas fa-arrow-left mr-1"></i> Volver
             </a>

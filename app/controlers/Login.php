@@ -1,5 +1,7 @@
 <?php
 
+define('MANTENIMIENTO', false); // true = login bloqueado, false = normal
+
 class Login extends Controlador {
 
     public function __construct() {
@@ -13,7 +15,8 @@ class Login extends Controlador {
 
     public function acceder() {
 
-       
+        if (MANTENIMIENTO) { redireccionar('/Login'); return; }
+
         if ($_SERVER['REQUEST_METHOD'] ) {
             $mail = $_POST['mail'];
             $pass = $_POST['pass'];
@@ -100,6 +103,8 @@ class Login extends Controlador {
 
     public function fichar()
     {
+        if (MANTENIMIENTO) { redireccionar('/Login'); return; }
+        
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mail']) && isset($_POST['pass'])) {
             $mail = $_POST['mail'];
             $pass = $_POST['pass'];
@@ -211,7 +216,7 @@ class Login extends Controlador {
 
                     $envioEmail = enviarEmail::enviarEmailDestinatario($nombreRemitente, $emailRemitente, $emailsDestino, $asunto, $message, $attachment, $tipoDoc);                
 
-                    if ($envioEmail) {
+                    if ($envioEmail === 1) {
                         $retorno = 1;
                         date_default_timezone_set("Europe/Madrid");
                         $caducidadEnlace = date('Y-m-d H:i:s');

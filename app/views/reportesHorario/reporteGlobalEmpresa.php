@@ -10,7 +10,7 @@
             echo $meses[$datos['mes']] . ' ' . $datos['anio'];
         ?></h2>
             <div class="flex gap-2">
-                <a href="<?php echo RUTA_URL; ?>/ReportesHorario/reportePDFGlobalEmpresa?mes=<?php echo $datos['mes']; ?>&anio=<?php echo $datos['anio']; ?>" class="bg-red-600 text-white px-4 py-2 rounded text-sm hover:bg-red-700">
+                <a href="<?php echo RUTA_URL; ?>/ReportesHorario/reportePDFGlobalEmpresa?mes=<?php echo $datos['mes']; ?>&anio=<?php echo $datos['anio']; ?>" target="_blank" class="bg-red-600 text-white px-4 py-2 rounded text-sm hover:bg-red-700">
                     <i class="fas fa-file-pdf mr-1"></i> Generar PDF
                 </a>
                 <a href="<?php echo RUTA_URL; ?>/ReportesHorario/generarReportes" class="bg-gray-500 text-white px-4 py-2 rounded text-sm hover:bg-gray-600">
@@ -37,6 +37,14 @@
                     <p class="text-2xl font-bold text-yellow-600"><?php echo $datos['totalJornadasIncompletas']; ?></p>
                     <p class="text-sm text-gray-600">Jornadas incompletas</p>
                 </div>
+                <div class="text-center p-3 bg-indigo-50 rounded">
+                    <p class="text-2xl font-bold text-indigo-600"><?php echo number_format($datos['horasEsperadasTotal'], 2); ?>h</p>
+                    <p class="text-sm text-gray-600">Horas esperadas</p>
+                </div>
+                <div class="text-center p-3 bg-<?php echo $datos['diferenciaTotal'] >= 0 ? 'green' : 'red'; ?>-50 rounded">
+                    <p class="text-2xl font-bold text-<?php echo $datos['diferenciaTotal'] >= 0 ? 'green' : 'red'; ?>-600"><?php echo ($datos['diferenciaTotal'] >= 0 ? '+' : '') . number_format($datos['diferenciaTotal'], 2); ?>h</p>
+                    <p class="text-sm text-gray-600">Diferencia</p>
+                </div>
             </div>
         </div>
 
@@ -57,6 +65,8 @@
                                 <th class="px-4 py-3 text-center">Jornadas completas</th>
                                 <th class="px-4 py-3 text-center">Jornadas incompletas</th>
                                 <th class="px-4 py-3 text-center">Acciones</th>
+                                <th class="px-4 py-3 text-center">Horas esp.</th>
+                                <th class="px-4 py-3 text-center">Diferencia</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -72,6 +82,8 @@
                                             <i class="fas fa-eye mr-1"></i>Ver detalle
                                         </a>
                                     </td>
+                                    <td class="px-4 py-3 text-center"><?php echo number_format($emp->horasEsperadas, 2); ?>h</td>
+                                    <td class="px-4 py-3 text-center <?php echo $emp->diferencia >= 0 ? 'text-green-600' : 'text-red-600'; ?>"><?php echo ($emp->diferencia >= 0 ? '+' : '') . number_format($emp->diferencia, 2); ?>h</td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>

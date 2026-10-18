@@ -9,10 +9,10 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
             <div class="bg-white rounded-lg shadow-lg p-6">
-                <h3 class="text-lg font-semibold mb-4"><i class="fas fa-file-csv text-green-600 mr-2"></i>Exportar Fichajes CSV</h3>
-                <p class="text-sm text-gray-600 mb-4">Descarga un archivo CSV con todos los fichajes del periodo seleccionado.</p>
+                <h3 class="text-lg font-semibold mb-4"><i class="fas fa-download text-green-600 mr-2"></i>Exportar Fichajes</h3>
+                <p class="text-sm text-gray-600 mb-4">Descarga un archivo con todos los fichajes del periodo seleccionado.</p>
 
-                <form method="GET" action="<?php echo RUTA_URL; ?>/ReportesHorario/exportarCSV" class="space-y-3">
+                <form id="formExportar" class="space-y-3">
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Desde</label>
@@ -54,8 +54,16 @@
                             <?php endif; ?>
                         </select>
                     </div>
-                    <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded text-sm hover:bg-green-700 w-full">
-                        <i class="fas fa-download mr-1"></i> Descargar CSV
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Formato</label>
+                        <select id="formatoExportar" class="w-full border rounded px-3 py-2 text-sm">
+                            <option value="csv">CSV (valores separados por punto y coma)</option>
+                            <option value="excel">Excel (.xlsx)</option>
+                            <option value="pdf">PDF</option>
+                        </select>
+                    </div>
+                    <button type="button" onclick="exportarFichajes()" class="bg-green-600 text-white px-6 py-2 rounded text-sm hover:bg-green-700 w-full">
+                        <i class="fas fa-download mr-1"></i> Exportar
                     </button>
                 </form>
             </div>
@@ -170,7 +178,7 @@ function generarPDFEmpleado() {
     if (!id) { alert('Seleccione un empleado'); return; }
     var mes = document.querySelector('#formEmpleado select[name=mes]').value;
     var anio = document.querySelector('#formEmpleado select[name=anio]').value;
-    window.location.href = '<?php echo RUTA_URL; ?>/ReportesHorario/reportePDFMensualEmpleado/' + id + '?mes=' + mes + '&anio=' + anio;
+    window.open('<?php echo RUTA_URL; ?>/ReportesHorario/reportePDFMensualEmpleado/' + id + '?mes=' + mes + '&anio=' + anio, '_blank');
 }
 
 function verReporteGlobal() {
@@ -182,7 +190,32 @@ function verReporteGlobal() {
 function generarPDFGlobal() {
     var mes = document.querySelector('#formGlobal select[name=mes]').value;
     var anio = document.querySelector('#formGlobal select[name=anio]').value;
-    window.location.href = '<?php echo RUTA_URL; ?>/ReportesHorario/reportePDFGlobalEmpresa?mes=' + mes + '&anio=' + anio;
+    window.open('<?php echo RUTA_URL; ?>/ReportesHorario/reportePDFGlobalEmpresa?mes=' + mes + '&anio=' + anio, '_blank');
+}
+
+function exportarFichajes() {
+    var form = document.getElementById('formExportar');
+    var formato = document.getElementById('formatoExportar').value;
+    var fechaInicio = form.querySelector('input[name=fechainicio]').value;
+    var fechaFin = form.querySelector('input[name=fechafin]').value;
+    var idEmpleado = form.querySelector('select[name=idempleado]').value;
+
+    var params = 'fechainicio=' + encodeURIComponent(fechaInicio) + '&fechafin=' + encodeURIComponent(fechaFin);
+    if (idEmpleado) {
+        params += '&idempleado=' + encodeURIComponent(idEmpleado);
+    }
+
+    var url;
+    if (formato === 'csv') {
+        url = '<?php echo RUTA_URL; ?>/ReportesHorario/exportarCSV?' + params;
+        window.location.href = url;
+    } else if (formato === 'excel') {
+        url = '<?php echo RUTA_URL; ?>/ReportesHorario/exportarExcel?' + params;
+        window.location.href = url;
+    } else if (formato === 'pdf') {
+        url = '<?php echo RUTA_URL; ?>/ReportesHorario/exportarFichajesPDF?' + params;
+        window.open(url, '_blank');
+    }
 }
 </script>
 

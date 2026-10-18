@@ -4,9 +4,9 @@
 
 <div class="w-full overflow-x-hidden border-t flex flex-col">
     <main class="w-full flex-grow p-4 md:p-6">
-        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
-            <h2 class="text-2xl font-semibold leading-tight">Mis Permisos: Vacaciones / Bajas / Ausencias</h2>
-            <div class="flex gap-2">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
+            <h2 class="text-2xl font-semibold leading-tight">Mis Vacaciones / Bajas / Ausencias</h2>
+            <div class="flex gap-2 self-start">
                 <a href="<?php echo RUTA_URL; ?>/Vacaciones/solicitarVacacion" class="bg-violeta-oscuro text-white px-4 py-2 rounded text-sm hover:bg-purple-800">
                     <i class="fas fa-plus mr-1"></i> Nueva solicitud
                 </a>
@@ -42,7 +42,7 @@
                                         $tipos = [
                                             'vacaciones' => '<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Vacaciones</span>',
                                             'baja' => '<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">Baja</span>',
-                                            'ausencia' => '<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Ausencia</span>'
+                                            'ausencia' => '<span class="bg-pink-100 text-pink-800 text-xs px-2 py-1 rounded">Ausencia</span>'
                                         ];
                                         echo $tipos[$v->tipovacacion] ?? $v->tipovacacion;
                                         ?>

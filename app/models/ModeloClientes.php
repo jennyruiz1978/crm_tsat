@@ -285,10 +285,25 @@ class ModeloClientes{
         return $resultado;        
     }
 
-    public function obtenerEquiposTablaClass($filas,$orden,$tipoOrden,$filaspagina,$cond)
+    public function obtenerEquiposTablaClassAntes($filas,$orden,$tipoOrden,$filaspagina,$cond)
     {
         $this->db->query("SELECT eq.id AS 'Nº', eq.nombre AS 'Nombre equipo',                
-                        IFNULL(mme.contratado, 0) AS 'Coste actual',                          
+                        eq.valor AS 'Coste actual',  
+                        suc.nombre AS 'Sucursal'
+                        FROM equipos eq
+                        LEFT JOIN sucursales suc ON eq.idsucursal=suc.id
+                        WHERE 1 $cond
+                        order by " . $orden . " " . $tipoOrden . " limit $filaspagina,$filas ");
+       
+        $resultado = $this->db->registros();
+
+        return $resultado;
+    }
+	
+	    public function obtenerEquiposTablaClass($filas,$orden,$tipoOrden,$filaspagina,$cond)
+    {
+        $this->db->query("SELECT eq.id AS 'Nº', eq.nombre AS 'Nombre equipo',                
+                        IFNULL(mme.contratado, 0) AS 'Coste actual',      
                         suc.nombre AS 'Sucursal'
                         FROM equipos eq
                         LEFT JOIN sucursales suc ON eq.idsucursal=suc.id

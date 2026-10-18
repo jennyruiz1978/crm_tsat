@@ -307,7 +307,7 @@
 | 11 | Admin: resolver solicitudes | ✅ Verificado: Issue #1, #3, columna Detalle, vista corregidos consistente |
 | 12 | Vacaciones completo | ✅ (Bug #18 + #19 corregidos) |
 | 13 | Reportes (CSV, PDF) | 🔲 Probar descarga CSV y generación PDF desde /ReportesHorario |
-| 14 | Configuración horario admin | 🔲 Probar activar/debeFichar, horas jornada, tolerancia desde /AdministracionHorario/configuracionHorario |
+| 14 | Configuración horario admin | ✅ Probar activar/debeFichar, horas jornada, tolerancia desde /AdministracionHorario/configuracionHorario |
 
 ### Pruebas Pendientes — Vacaciones (VA)
 
@@ -475,9 +475,9 @@
 - **Archivos**: `Vacaciones.php`, `detalleEmpleado.php`, `historialEmpleado.php`, `detalleJornada.php`, `reporteMensualEmpleado.php`, `listadoGlobal.php`, `calendarioJornadas.php`
 
 ### Mejora: Reorganización sidebar y títulos inclusivos
-- **Sidebar**: "Control Horario" → "Mi Control Horario", "Vacaciones" → "Mis Vacaciones" (3 roles)
-- **Sidebar admin**: "Listado General" movido de Vacaciones a Admin. Horario, renombrado a "Vacaciones Global"
-- **Vistas**: Títulos actualizados: "Mis Vacaciones/Bajas/Ausencias", "Solicitar Vacación/Baja/Ausencia", "Gestión de Vacaciones/Bajas/Ausencias", botón "Vacaciones Global"
+- **Sidebar**: "Control Horario" → "Mi Control Horario", "Vacaciones" → sub-item "Vacaciones/Bajas" dentro de Mi Control Horario (3 roles)
+- **Sidebar admin**: "Listado General" movido de Vacaciones a Admin. Horario, renombrado a "Vacaciones y permisos"
+- **Vistas**: Títulos actualizados: "Mis Vacaciones / Bajas / Ausencias", "Solicitar Vacaciones / Baja / Permiso", "Solicitudes de vacaciones y permisos", botón "Nueva solicitud"
 - **Permisos BD**: `rolesbase.permisos` actualizados para roles 1, 3 y 4
 - **Nuevo método**: `AdministracionHorario::listadoVacaciones()` para acceso desde sidebar admin
 - **Archivos**: `misVacaciones.php`, `solicitarVacacion.php`, `listadoVacaciones.php`, `AdministracionHorario.php`, BD `rolesbase.permisos`
@@ -514,15 +514,14 @@
 
 ### Mejora: Sidebar reorganizado (permanente)
 - "Control Horario" → "Mi Control Horario" (3 roles)
-- "Vacaciones" → "Mis Permisos" como nombre de grupo (3 roles)
-- "Mis Vacaciones" → "Mis Permisos" como subitem (3 roles)
+- "Vacaciones/Bajas" es un sub-item de "Mi Control Horario" (3 roles)
 - Admin. Horario: añadido "Calendario Jornadas" y renombrado "Vacaciones Global" → "Permisos Global"
 - Mi Control Horario: añadido "Mi Calendario" (3 roles)
 - **Archivos**: BD `rolesbase.permisos` (roles 1, 3, 4)
 
 ### Mejora: Títulos inclusivos en vistas
-- `misVacaciones.php`: título → "Mis Permisos: Vacaciones / Bajas / Ausencias"
-- `solicitarVacacion.php`: título → "Solicitar Permiso"
+- `misVacaciones.php`: título → "Mis Vacaciones / Bajas / Ausencias"
+- `solicitarVacacion.php`: título → "Solicitar Vacaciones / Baja / Permiso"
 - `listadoVacaciones.php`: título → "Gestión de Permisos"
 - `listadoGlobal.php`: "Vacaciones pendientes" → "Permisos pendientes"
 - Eliminado botón "Vacaciones Global" de `misVacaciones.php` (ya en sidebar admin)
@@ -653,8 +652,8 @@ Se creó un método temporal `migrarConfigHorario()` en `AdministracionHorario.p
 
 | # | Prueba | Estado |
 |---|--------|--------|
-| DF-1 | Login como admin con `debeFichar=1` → ver "Mi Control Horario" y "Mis Permisos" en sidebar | ✅ |
-| DF-2 | Login como visitante con `debeFichar=1` → ver "Mi Control Horario" y "Mis Permisos" en sidebar | ✅ |
+| DF-1 | Login como admin con `debeFichar=1` → ver "Mi Control Horario" en sidebar | ✅ |
+| DF-2 | Login como visitante con `debeFichar=1` → ver "Mi Control Horario" en sidebar | ✅ |
 | DF-3 | Poner `debeFichar=0` al admin, cerrar sesión y logar → CHOVA desaparece del sidebar | ✅ |
 | DF-4 | Con `debeFichar=0`, acceder a `/ControlHorario/fichar` por URL → redirige a `/Inicio` | ✅ |
 | DF-5 | Con `debeFichar=0`, acceder a `/Vacaciones/solicitarVacacion` por URL → redirige a `/Inicio` | ✅ |
@@ -774,7 +773,7 @@ Se creó un método temporal `migrarConfigHorario()` en `AdministracionHorario.p
 
 ### Cambio: Sidebar — Vacaciones movido dentro de Mi Control Horario
 
-- **Problema**: El grupo "Mis Permisos" (icono sombrilla) era un grupo separado en el sidebar con solo 2 sub-items ("Solicitar" y "Mis Permisos"). El botón "Nueva solicitud" ya existe en la vista `misVacaciones`.
+- **Problema**: El grupo "Vacaciones" era un grupo separado en el sidebar con solo 2 sub-items ("Solicitar" y "Mis Vacaciones"). El botón "Nueva solicitud" ya existe en la vista `misVacaciones`.
 - **Solución**:
   1. Eliminado el grupo "Vacaciones" como entrada principal del sidebar en BD (`rolesbase.permisos` roles id=1, 3, 4).
   2. Añadido `["/Vacaciones/misVacaciones","Vacaciones/Bajas"]` como sub-item de "Mi Control Horario".
@@ -830,12 +829,23 @@ Se creó un método temporal `migrarConfigHorario()` en `AdministracionHorario.p
   5. BD: Actualizados registros existentes de `toleranciaminutos=10` a `5`
 - **Archivos**: `configuracionHorario.php`, `ModeloConfiguracionHorario.php`, `AdministracionHorario.php`, `Usuarios.php`, BD `configuracionhorario`
 
+### Cambio: Colores de estados pendientes y ausencia en badges y calendarios
+
+- **Problema**: Las clases `bg-orange-100 text-orange-700/800` no existen en el CSS compilado de Tailwind, causando que los badges de estados pendientes aparezcan sin color.
+- **Problema**: `ausencia` aprobada usaba `bg-yellow-100 text-yellow-800` (igual que `incompleta`) en vez de `bg-pink-100 text-pink-800` como en el calendario.
+- **Problema**: Los calendarios mostraban jornadas con estado `pendiente_*` como si fueran definitivas.
+- **Solución**:
+  1. Cambiados colores de badges pendientes: `pendiente_vacaciones` → morado claro con borde, `pendiente_baja` → rojo claro con borde, `pendiente_ausencia` → rosa claro con borde.
+  2. Cambiado `ausencia` aprobada de `bg-yellow-100 text-yellow-800` a `bg-pink-100 text-pink-800` en todas las vistas.
+  3. Los calendarios ya no muestran jornadas con estado `pendiente_*` (se ven como día vacío).
+- **Archivos**: `historialEmpleado.php`, `detalleJornada.php`, `listadoGlobal.php`, `detalleEmpleado.php`, `reporteMensualEmpleado.php`, `listadoVacaciones.php`, `misVacaciones.php`, `miCalendario.php`, `calendarioJornadas.php`
+
 ### Pendientes añadidos (al final del proyecto)
 
-- **Reportes+**: Añadir columnas de horas esperadas (`jornadatipohoras`), déficit/exceso (`horastotales - jornadatipohoras`), y retrasos (primer fichaje > `horarioentrada + toleranciaminutos`) a los reportes.
-- **Listado+**: Indicadores de retrasos y horas extra en el listado global de admin.
+- **Reportes+**: Añadir columnas de horas esperadas (`jornadatipohoras`) y déficit/exceso (`horastotales - jornadatipohoras`) a los reportes. ✅ Completado (ver abajo)
+- **Listado+**: Indicadores de horas extra en listado global de admin. 🔲 Pendiente (al final)
 
-### Test #13: Reportes (CSV, PDF) — En progreso
+### Test #13: Reportes (CSV, PDF) — ✅ Completado
 
 #### Pruebas completadas
 
@@ -865,20 +875,492 @@ Este comportamiento es **correcto e intencionado** porque:
 - Renombrar `obtenerEmpleadosQueFichan()` → `obtenerEmpleadosNoClienteActivos()` para que el nombre refleje lo que realmente hace. La query y el resultado no cambian, solo el nombre es misleading.
 - Actualizar los 3 usos: `AdministracionHorario.php` (líneas 40 y 398), `ReportesHorario.php` (línea 35), `ModeloControlHorario.php` (línea 171).
 
+#### Pruebas completadas
+
+| # | Prueba | Estado | Notas |
+|---|--------|--------|-------|
+| 13.1 | Acceso a selector de reportes | ✅ | Página carga con 3 tarjetas: CSV, Empleado, Global |
+| 13.2 | Empleados en select muestra todos los no-cliente activos | ✅ | Comportamiento correcto (ver nota arriba) |
+| 13.3 | CSV - todos los empleados | ✅ | |
+| 13.4 | CSV - empleado específico | ✅ | |
+| 13.5 | CSV - sin datos (rango vacío) | ✅ | |
+| 13.6 | Reporte mensual empleado (pantalla) | ✅ | |
+| 13.7 | Reporte mensual - estados (vacaciones, baja, ausencia) | ✅ | |
+| 13.8 | Reporte mensual empleado (PDF) | ✅ | |
+| 13.9 | Reporte global empresa (pantalla) | ✅ | |
+| 13.10 | Reporte global - link a detalle empleado | ✅ | |
+| 13.11 | Reporte global empresa (PDF) | ✅ | |
+| 13.12 | Reporte global - sin datos | ✅ | |
+
 #### Pruebas pendientes
 
 | # | Prueba | Estado |
 |---|--------|--------|
-| 13.3 | CSV - todos los empleados | 🔲 |
-| 13.4 | CSV - empleado específico | 🔲 |
-| 13.5 | CSV - sin datos (rango vacío) | 🔲 |
-| 13.6 | Reporte mensual empleado (pantalla) | 🔲 |
-| 13.7 | Reporte mensual - estados (vacaciones, baja, ausencia) | 🔲 |
-| 13.8 | Reporte mensual empleado (PDF) | 🔲 |
-| 13.9 | Reporte global empresa (pantalla) | 🔲 |
-| 13.10 | Reporte global - link a detalle empleado | 🔲 |
-| 13.11 | Reporte global empresa (PDF) | 🔲 |
-| 13.12 | Reporte global - sin datos | 🔲 |
-| 13.13 | Auditoría CSV | 🔲 |
-| 13.14 | Permisos: visitante no puede acceder | 🔲 |
-| 13.15 | Permisos: técnico no puede acceder | 🔲 |
+| 13.13 | Auditoría CSV | ❌ No necesario — los reportes existentes ya exportan los datos |
+| 13.14 | Permisos: visitante no puede acceder a Reportes | ✅ Verificado |
+| 13.15 | Permisos: técnico no puede acceder a Reportes | ✅ Verificado |
+
+### Bug CFG-7: Campos vacíos en configuración horario se guardan como 0
+
+- **Problema**: Al editar la config de un empleado y dejar vacíos los campos `jornadatipohoras` o `toleranciaminutos`, se guardaban como `0` en la BD (MySQL convierte string vacío a 0).
+- **Solución**: Validación server-side en `AdministracionHorario::configuracionHorario()`. Campos vacíos o no numéricos se reemplazan por defaults: `jornadatipohoras` → 8.00, `toleranciaminutos` → 5, `horarioentrada` → '09:00:00', `horariosalida` → '18:00:00'.
+- **Archivos**: `AdministracionHorario.php` (líneas 329-334)
+
+### Bug CFG-8: max de jornadatipohoras cambiado de 12 a 24
+
+- **Cambio**: `<input type="number" name="jornadatipohoras" ... max="12">` → `max="24"` en `configuracionHorario.php`
+- **Archivos**: `configuracionHorario.php`
+
+### Corrección BD: Visitante Prueba (id=148)
+
+- `jornadatipohoras` cambiado de 0.00 a 8.00, `toleranciaminutos` cambiado de 0 a 5
+
+### Renombramiento: obtenerEmpleadosQueFichan() → obtenerEmpleadosNoClienteActivos()
+
+- **Motivo**: El nombre `obtenerEmpleadosQueFichan` era misleading. Devuelve todos los usuarios no-cliente activos, no solo los que fichan.
+- **Archivos**: `ModeloControlHorario.php` (definición), `AdministracionHorario.php` (2 usos: líneas 40 y 383)
+
+### Feature: Reportes+ — Horas esperadas y diferencia en reportes
+
+- **Reporte Mensual por Empleado** (`reporteMensualEmpleado`):
+  - 2 tarjetas nuevas: "Horas esperadas" (`jornadatipohoras × diasTrabajados`) y "Diferencia" (`horasTotales - horasEsperadas`, verde si >= 0, rojo si < 0)
+  - 2 columnas nuevas al final de la tabla: "Horas esp." (`jornadatipohoras` por jornada) y "Diferencia" (`horastotales - jornadatipohoras` por jornada)
+- **Reporte Global por Empresa** (`reporteGlobalEmpresa`):
+  - 2 tarjetas nuevas: "Horas esperadas" (suma por empleado) y "Diferencia" (verde/rojo)
+  - 2 columnas nuevas al final de la tabla: "Horas esp." (`jornadatipohoras × diasstrabajados`) y "Diferencia" (`totalhoras - horasEsperadas` por empleado)
+- **Valores por defecto** (si no hay config): `jornadatipohoras = 8.00` (COALESCE en las queries)
+- **Modelo**: `obtenerResumenMensualEmpleado()` — Añadido JOIN con `configuracionhorario`, campos `j.id, jornadatipohoras, horarioentrada, toleranciaminutos`
+- **Modelo**: `obtenerResumenMensualGlobal()` — Añadido JOIN con `configuracionhorario`, campo `jornadatipohoras`
+- **Modelo**: Eliminado método `obtenerPrimerFichajePorJornada()` (columna Retraso eliminada)
+- **Controlador**: `reporteMensualEmpleado()` — Cálculos de `horasEsperadas`, `diferencia`, eliminado cálculo de retrasos
+- **Controlador**: `reporteGlobalEmpresa()` — Cálculos de `horasEsperadasTotal`, `diferenciaTotal`, `horasEsperadas` y `diferencia` por empleado
+- **Archivos**: `ModeloReportesHorario.php`, `ReportesHorario.php`, `reporteMensualEmpleado.php`, `reporteGlobalEmpresa.php`
+
+### Cambio: Jornadas pendientes se cuentan como incompletas en reportes
+
+- **Problema**: Las jornadas con estado `pendiente_vacaciones`, `pendiente_baja`, `pendiente_ausencia` no se contaban como incompletas, causando discrepancia entre el número del header y las ✗ en la tabla.
+- **Solución**: En `reporteMensualEmpleado()` (controlador), cambiado el `elseif` para que todas las jornadas que no sean completadas/vacaciones/baja/ausencia se cuenten como incompletas (incluyendo las pendientes).
+- **Solución**: En `obtenerResumenMensualGlobal()` (modelo), cambiado el CASE de `jornadasincompletas` para incluir los estados `pendiente_*`.
+- **Solución**: En `reporteMensualEmpleado.php`, la columna "Completada" ahora muestra ✓ para completadas/vacaciones/baja/ausencia y ✗ para todo lo demás (incluyendo pendientes).
+- **Archivos**: `ReportesHorario.php`, `ModeloReportesHorario.php`, `reporteMensualEmpleado.php`
+
+### Pendientes actualizados
+
+| # | Tarea | Estado |
+|---|-------|--------|
+| CFG-7 | Validación server-side campos vacíos | ✅ Completado |
+| CFG-8 | max jornadatipohoras cambiado a 24 | ✅ Completado |
+| Renombramiento | obtenerEmpleadosQueFichan → obtenerEmpleadosNoClienteActivos | ✅ Completado |
+| Reportes+ | Horas esperadas y diferencia en reportes | ✅ Completado |
+| Retraso | Columna de retraso eliminada de reportes | ✅ Completado (eliminada) |
+| Jornadas pendientes | Contadas como incompletas en reportes | ✅ Completado |
+| Limpieza | Eliminar migrarConfigHorario, migrarResultado.php, permiso temporal | 🔲 Pendiente |
+| Listado+ | Indicadores de horas esperadas y diferencia en listado global | ❌ No se implementa |
+| TZ-1 | Verificar timezone MySQL vs PHP en producción | 🔲 Pendiente |
+| Deploy | Checklist MIGRACION_PRODUCCION.md | 🔲 Pendiente |
+
+### Cambio: Ocultar columna Tolerancia de la vista de configuración
+
+- **Motivo**: La columna de retraso fue eliminada de los reportes, por lo que la tolerancia no se usa en ningún cálculo visible. Se oculta para evitar confusión, pero se mantiene en la BD y en la lógica interna por si se necesita en el futuro.
+- **Cambios en `configuracionHorario.php`**:
+  1. Ocultada columna `<th>Tolerancia (min)</th>` del thead de la tabla
+  2. Ocultada celda `<td>` de tolerancia de cada fila del tbody
+  3. Campo de tolerancia del modal cambiado de `<input type="number">` visible con label a `<input type="hidden">` — el JS `editarConfig()` sigue rellenándolo con el valor de la BD, por lo que se preserva al editar otros campos
+- **No se modifica**: BD, controlador, modelo ni JS. La tolerancia sigue existiendo con valor por defecto 5 y se guarda correctamente al editar otros campos.
+
+### Cambio: Sidebar labels y títulos de vistas
+
+- **Problema**: Los labels del sidebar "Solicitudes Mod." y "Permisos Global" eran confusos.
+- **Solución**:
+  1. BD `rolesbase.permisos` (ids 1, 3, 4): "Solicitudes Mod." → "Modificaciones fichajes", "Permisos Global" → "Vacaciones y permisos"
+  2. Vista `solicitudesModificacion.php`: Título cambiado a "Solicitudes de Modificación de fichajes"
+  3. Vista `listadoVacaciones.php`: Título cambiado a "Solicitudes de vacaciones y permisos"
+- **Archivos**: BD `rolesbase.permisos`, `solicitudesModificacion.php`, `listadoVacaciones.php`
+
+### Cambio: PDFs abren en nueva ventana/pestaña
+
+- **Problema**: Los links de generación de PDF redirigían en la misma ventana, perdiendo la vista actual.
+- **Solución**:
+  1. `reporteMensualEmpleado.php`: Link "Generar PDF" añadido `target="_blank"`
+  2. `selectorReportes.php`: Botones "Generar PDF" usan `window.open()` en vez de `window.location.href`
+  3. `reporteGlobalEmpresa.php`: Link "Generar PDF" añadido `target="_blank"`
+- **Archivos**: `reporteMensualEmpleado.php`, `selectorReportes.php`, `reporteGlobalEmpresa.php`
+
+### Cambio: Reportes PDF con horas esperadas y diferencia
+
+- **Reporte PDF Mensual por Empleado** (`reporteHorarioEmpleado.php`):
+  - Añadida fila "Horas esperadas" en la tabla de resumen (fondo morado claro)
+  - Añadida fila "Diferencia" en la tabla de resumen (verde si >= 0, rojo si < 0)
+  - Variables pasadas desde controlador: `horasEsperadas`, `diferencia`, `jornadasCompletas`, `jornadasIncompletas`
+
+- **Reporte PDF Global Empresa** (`reporteHorarioGlobal.php`):
+  - Añadidas filas "Jornadas completas", "Jornadas incompletas", "Horas esperadas", "Diferencia" en tabla de resumen
+  - Añadidas columnas "Horas esp." y "Diferencia" en tabla por empleado
+  - Variables calculadas en controlador: `horasEsperadas`, `diferencia` por empleado, totales globales
+
+- **Controlador** `ReportesHorario.php`:
+  - `reportePDFMensualEmpleado()`: Añadidos cálculos de `horasEsperadas`, `diferencia`, `jornadasCompletas`, `jornadasIncompletas` en `$datosPdf`
+  - `reportePDFGlobalEmpresa()`: Añadidos cálculos de `horasEsperadas`, `diferencia`, totales en `$datos`
+
+- **Archivos**: `reporteHorarioEmpleado.php`, `reporteHorarioGlobal.php`, `ReportesHorario.php`
+
+### Pendientes actualizados (post-sesión 2026-08-24)
+
+| # | Tarea | Estado |
+|---|-------|--------|
+| Limpieza | Eliminar migrarConfigHorario, migrarResultado.php, permiso temporal | 🔲 Pendiente |
+| Listado+ | Indicadores de horas esperadas y diferencia en listado global | ❌ No se implementa (decisión del usuario) |
+| TZ-1 | Verificar timezone MySQL vs PHP en producción | 🔲 Pendiente |
+| Deploy | Checklist MIGRACION_PRODUCCION.md | 🔲 Pendiente |
+| EXP-1 | PDF Empleado: reemplazar tabla de fichajes por tabla de jornadas resumidas | ✅ Completado |
+| EXP-2 | Exportar Fichajes: añadir formato Excel (.xlsx) y PDF, además de CSV | ✅ Completado |
+
+---
+
+## Plan Final Aprobado — Exportación de Reportes (Sesión 2026-08-24)
+
+### Cambio 1: PDF Empleado → Mostrar tabla de jornadas resumidas (como la pantalla)
+
+**Archivo**: `app/views/documentos/reporteHorarioEmpleado.php`
+
+Reemplazar la tabla de fichajes individuales (líneas 32-64) por una tabla de jornadas con las mismas columnas que la vista en pantalla:
+
+| Columna | Contenido | Estilo |
+|---------|-----------|--------|
+| Fecha | `d/m/Y` | Texto normal |
+| Estado | Badge con color según `estadojornada` (igual que pantalla) | Colores de fondo según estado |
+| Horas | `horastotales` | Centrado |
+| Horas esp. | `jornadatipohoras` | Centrado |
+| Diferencia | `horastotales - jornadatipohoras` | Verde (+) / Rojo (-) |
+| Completada | ✓ o ✗ | Centrado |
+
+Los fichajes individuales se eliminan del PDF (ya disponibles en CSV/Excel).
+
+**Controlador** `ReportesHorario.php`: El método `reportePDFMensualEmpleado()` ya pasa `$datos['resumen']` con los datos necesarios. Solo la vista necesita cambios.
+
+### Cambio 2: Exportar Fichajes → CSV + Excel + PDF
+
+#### 2a. Instalar PhpSpreadsheet
+
+Añadir `phpoffice/phpspreadsheet` al `composer.json` existente en `public/composer.json` y ejecutar `composer update` en `public/`.
+
+Esto añadirá phpspreadsheet en `public/vendor/phpoffice/phpspreadsheet/` y actualizará el autoload existente. Al estar dentro de `public/vendor/`, se aísla del resto del proyecto (igual que en piensos_erp).
+
+#### 2b. Crear clase `ExportImportExcel.php`
+
+**Archivo nuevo**: `app/librerias/ExportImportExcel.php`
+
+Basada en `C:\xampp\htdocs\piensos_erp\app\librerias\ExportImportExcel.php`, adaptada para:
+- `require_once` apuntando a `RUTA_APP . '/../public/vendor/autoload.php'`
+- Método estático `exportToExcel($cabeceras, $datos, $nombreArchivo)` — genera `.xlsx` y lo descarga
+- Método estático `prepareDataToExportExcel($datos, $nombreListado)` — wrapper que extrae cabeceras automáticamente
+
+#### 2c. Modificar vista `selectorReportes.php`
+
+Reemplazar el card "Exportar Fichajes CSV" por "Exportar Fichajes" con:
+- Un **select de formato**: CSV, Excel (.xlsx), PDF
+- Los mismos campos (Desde, Hasta, Empleado) que ya existen
+- **1 botón "Exportar"** que cambia el `action` del formulario según el formato seleccionado (via JS)
+
+Rutas:
+- CSV: `ReportesHorario/exportarCSV` (ya existe)
+- Excel: `ReportesHorario/exportarExcel` (nuevo)
+- PDF: `ReportesHorario/exportarFichajesPDF` (nuevo)
+
+#### 2d. Añadir métodos en el controlador `ReportesHorario.php`
+
+- `exportarExcel()` — Similar a `exportarCSV()` pero usando `ExportImportExcel::prepareDataToExportExcel()` con los datos de `obtenerFichajesParaCSV()`
+- `exportarFichajesPDF()` — Genera PDF de fichajes usando `generarPdf::documentoPDFExportar()` con nueva plantilla `documentos/reporteFichajesExport.php`
+
+#### 2e. Crear plantilla PDF para fichajes exportados
+
+**Archivo nuevo**: `app/views/documentos/reporteFichajesExport.php`
+
+Tabla simple con: Fecha/Hora, Empleado, Tipo, Observaciones (similar al CSV pero en formato PDF con estilos).
+
+### Resumen de archivos a crear/modificar
+
+| # | Archivo | Acción |
+|---|---------|--------|
+| 1 | `app/views/documentos/reporteHorarioEmpleado.php` | Modificar: reemplazar tabla de fichajes por tabla de jornadas |
+| 2 | `public/composer.json` | Modificar: añadir `phpoffice/phpspreadsheet` |
+| 3 | `app/librerias/ExportImportExcel.php` | Crear: clase wrapper PhpSpreadsheet |
+| 4 | `app/views/reportesHorario/selectorReportes.php` | Modificar: select formato + 1 botón Exportar + JS |
+| 5 | `app/controlers/ReportesHorario.php` | Modificar: añadir `exportarExcel()` + `exportarFichajesPDF()` |
+| 6 | `app/views/documentos/reporteFichajesExport.php` | Crear: plantilla PDF para fichajes exportados |
+
+### Referencia: Implementación existente en piensos_erp
+
+- Librería PhpSpreadsheet en: `C:\xampp\htdocs\piensos_erp\public\vendor\phpoffice\phpspreadsheet\`
+- Clase wrapper en: `C:\xampp\htdocs\piensos_erp\app\librerias\ExportImportExcel.php`
+- Usa `require '../public/vendor/autoload.php'` y `\PhpOffice\PhpSpreadsheet\Spreadsheet` / `\PhpOffice\PhpSpreadsheet\Writer\Xlsx`
+- Genera archivo en `sys_get_temp_dir()`, envía headers HTTP para descarga, y elimina archivo temporal
+
+---
+
+## Pendientes Globales del Proyecto (resumen)
+
+### Limpieza de código
+
+| # | Tarea | Archivo/Lugar | Estado |
+|---|-------|---------------|--------|
+| CLEANUP-1 | Eliminar método `migrarConfigHorario()` | `app/controlers/AdministracionHorario.php` | ✅ Completado |
+| CLEANUP-2 | Eliminar vista `migrarResultado.php` | `app/views/administracionHorario/migrarResultado.php` | ✅ Completado |
+| CLEANUP-3 | Eliminar permiso `/AdministracionHorario/migrarConfigHorario` de rolesbase.permisos (admin id=1) | BD `rolesbase` | 🔲 Pendiente (query preparada, ver abajo) |
+| CLEANUP-4 | Eliminar archivos backup/copy de controladores | `app/controlers/Clientes copy.php`, `Clientes_prod_antes_del_23_02_2025.php`, `Clientes1.php`, `Clientes1xxx.php`, `FacturasClienteAntes.php`, `Incidencias_correcc_ficheros.php`, `Incidencias_prod_22_05_2026.php`, `Pruebas.php` | 🔲 Pendiente |
+| CLEANUP-5 | Eliminar archivos backup/copy de modelos | `app/models/ModeloClientes copy.php`, `ModeloClientes_prod_antes_del_23_02_2025.php` | 🔲 Pendiente |
+| CLEANUP-6 | Eliminar archivos backup/copy de vistas | `app/views/incidencias/verIncidencia copy.php`, `app/views/usuarios/usuarios copy.php` | 🔲 Pendiente |
+| CLEANUP-7 | Eliminar archivos backup de librerías | `app/librerias/enviarEmail copy.php` | ✅ Completado |
+| CLEANUP-8 | Eliminar vista y controlador de pruebas | `app/controlers/Pruebas.php`, `app/views/pruebas/` (incluido `table.zip` y `table.html`) | 🔲 Pendiente |
+| CLEANUP-9 | Eliminar archivo de plantilla backup | `public/documentos/plantillasCorreo/plantillaboton copy.php` | ✅ Completado |
+| CLEANUP-10 | Eliminar archivos temporales de la raíz del proyecto | `temp_admin_perms.json`, `temp_admin_perms.txt`, `tmp_perms.txt`, `tmp_permisos.txt`, `test.txt`, `mysql_error.log` | ✅ Completado |
+| CLEANUP-11 | Eliminar archivos de configuración backup | `app/config/admin_permisos_backup.txt`, `app/config/admin_permisos_raw.txt`, `app/config/tecnico_permisos_backup.txt` | ✅ Completado |
+
+#### CLEANUP-3: Query para eliminar permiso de BD
+
+```sql
+-- Verificar que existe
+SELECT id, rol, nombre,
+       JSON_CONTAINS(permisos, '["/AdministracionHorario/migrarConfigHorario","link"]') AS tiene_permiso
+FROM rolesbase WHERE id = 1;
+
+-- Eliminar
+UPDATE rolesbase 
+SET permisos = JSON_REMOVE(
+    permisos, 
+    JSON_UNQUOTE(JSON_SEARCH(permisos, 'one', '/AdministracionHorario/migrarConfigHorario'))
+)
+WHERE id = 1 
+AND JSON_CONTAINS(permisos, '["/AdministracionHorario/migrarConfigHorario","link"]');
+
+-- Verificar que se eliminó
+SELECT id, rol, nombre,
+       JSON_CONTAINS(permisos, '["/AdministracionHorario/migrarConfigHorario","link"]') AS tiene_permiso
+FROM rolesbase WHERE id = 1;
+```
+
+### Funcionalidades pendientes de implementar
+
+| # | Tarea | Descripción | Estado |
+|---|-------|-------------|--------|
+| EXP-1 | PDF Empleado: tabla de jornadas resumidas | Reemplazar tabla de fichajes individuales por tabla de jornadas (Fecha, Estado, Horas, Horas esp., Diferencia, Completada) en `reporteHorarioEmpleado.php` | ✅ Completado |
+| EXP-2 | Exportar Fichajes: CSV + Excel + PDF | Añadir PhpSpreadsheet, crear `ExportImportExcel.php`, modificar `selectorReportes.php`, añadir `exportarExcel()` y `exportarFichajesPDF()` en `ReportesHorario.php`, crear `reporteFichajesExport.php` | ✅ Completado |
+| EXP-REV | Revisar columnas del Exportar Fichajes | Decisión: mantener las 4 columnas actuales (Fecha/Hora, Empleado, Tipo, Observaciones) sin cambios | ✅ Cerrado |
+
+### Funcionalidades diferidas (no implementadas por decisión)
+
+| # | Tarea | Descripción | Estado | Notas |
+|---|-------|-------------|--------|-------|
+| DIFF-1 | Detección de llegadas tarde | Campo `horarioentrada` existe en BD pero no se usa para cálculos. Detectar primer fichaje > entrada + tolerancia | 🔲 Diferida | Campo oculto en `configuracionHorario.php` como hidden input |
+| DIFF-2 | Detección de salidas anticipadas | Campo `horariosalida` existe en BD pero no se usa para cálculos | 🔲 Diferida | Campo oculto en `configuracionHorario.php` como hidden input |
+| DIFF-3 | Cálculo de retrasos con tolerancia | Campo `toleranciaminutos` existe (default 5 min) pero no se usa | 🔲 Diferida | Campo oculto en `configuracionHorario.php` como hidden input. Columna "Retraso" eliminada de reportes |
+| DIFF-4 | Indicadores de horas esperadas y diferencia en listado global admin | Mostrar horas esp. y diferencia en `listadoGlobal.php` | ❌ No se implementa | Decisión del usuario |
+
+### Despliegue
+
+| # | Tarea | Descripción | Estado |
+|---|-------|-------------|--------|
+| DEPLOY-1 | Seguir checklist de MIGRACION_PRODUCCION.md | Checklist completo de migración a producción | ✅ Completado |
+
+### Seguridad
+
+| # | Tarea | Descripción | Severidad | Estado |
+|---|-------|-------------|-----------|--------|
+| SEC-1 | Contraseña BD vacía en producción | `DB_PASSWORD = ''` en `configurar.php` (root sin contraseña) | Alta | 🔲 Pendiente |
+| SEC-2 | Credenciales email en texto plano | `PASSWORD_CORREO` visible en `configurar.php` | Media | 🔲 Pendiente |
+| SEC-3 | Sin .gitignore para archivos sensibles | Archivos como `temp_admin_perms.json`, SQL dumps, `mysql_error.log` accesibles | Media | 🔲 Pendiente (archivos temporales eliminados en CLEANUP-10, pero .gitignore aún necesario) |
+| SEC-4 | SQL injection en código original del CRM | Varias queries usan interpolación de strings en vez de parámetros bind | Media | 🔲 Pendiente (código existente, no tocar sin confirmación) |
+| SEC-5 | Contraseñas en texto plano en la BD | Las contraseñas de usuarios no están hasheadas | Media | 🔲 Pendiente (código existente, no tocar sin confirmación) |
+
+### Verificación de timezone
+
+| # | Tarea | Descripción | Estado |
+|---|-------|-------------|--------|
+| TZ-1 | Verificar que `SELECT NOW()` de MySQL coincide con `date('Y-m-d H:i:s')` de PHP en servidor de producción | Crítico para el cierre de jornadas. Ver MIGRACION_PRODUCCION.md sección 10.1 | 🔲 Pendiente |
+
+---
+
+## Cambios 2026-08-25
+
+### EXP-1: PDF Empleado — Tabla de jornadas resumidas — ✅ Completado
+
+- **Problema**: El PDF mensual por empleado mostraba una tabla de fichajes individuales (Fecha, Hora, Tipo, Corregido, Observaciones), que ya está disponible en CSV/Excel.
+- **Solución**: Reemplazada la tabla de fichajes individuales por una tabla de jornadas resumidas con las mismas columnas que la vista en pantalla: Fecha, Estado (badge con color), Horas, Horas esp., Diferencia, Completada.
+- **Archivos**: `app/views/documentos/reporteHorarioEmpleado.php`
+
+### Cambio: PDF Global de landscape a portrait
+
+- **Problema**: El reporte PDF global se generaba en orientación horizontal (landscape), diferente del reporte mensual por empleado que es vertical.
+- **Solución**: Cambiado a orientación vertical (portrait). Ajustados font-sizes de cabeceras y celdas de 8px a 10px, restaurados nombres completos de cabeceras abreviadas.
+- **Archivos**: `app/controlers/ReportesHorario.php` (`'L'` → `'P'`), `app/views/documentos/reporteHorarioGlobal.php` (eliminado `orientation="landscape"`, ajustados font-sizes y padding)
+
+### Cambio: Font-sizes en PDFs
+
+- **reporteHorarioEmpleado.php**: Cabeceras 10px → 11px, celdas 10px → 12px, badge estado 9px → 10px
+- **reporteHorarioGlobal.php**: Cabeceras 8px → 10px, celdas 8px → 10px, padding 4px 5px → 5px 6px
+
+### EXP-2: Exportar Fichajes → CSV + Excel + PDF — ✅ Completado
+
+#### Paso 1: Instalar PhpSpreadsheet
+- Ejecutado `composer require phpoffice/phpspreadsheet:^1.28 --ignore-platform-req=ext-gd` en `public/`
+- Añadidas dependencias: phpspreadsheet 1.28.0, psr/simple-cache, psr/http-message, psr/http-factory, psr/http-client, markbaker/complex, markbaker/matrix, maennchen/zipstream-php, ezyang/htmlpurifier, myclabs/php-enum
+- Autoload actualizado correctamente
+- **Archivos**: `public/composer.json`, `public/composer.lock`, `public/vendor/` (nuevos paquetes)
+
+#### Paso 2: Crear `ExportImportExcel.php`
+- Nueva clase `ExportImportExcel` en `app/librerias/ExportImportExcel.php`
+- Método estático `exportarFichajesExcel($cabeceras, $filas, $nombreArchivo)`:
+  - Crea `Spreadsheet`, escribe cabeceras en fila 1 (negrita), datos en filas 2+
+  - Auto-size de columnas
+  - Guarda en `sys_get_temp_dir()`, envía headers HTTP para descarga `.xlsx`, elimina archivo temporal
+  - Validación de datos vacíos con alert JS
+- **Archivo**: `app/librerias/ExportImportExcel.php`
+
+#### Paso 3: Modificar `selectorReportes.php`
+- Reemplazado card "Exportar Fichajes CSV" por "Exportar Fichajes" con:
+  - Select de formato: CSV, Excel (.xlsx), PDF
+  - Mismos campos (Desde, Hasta, Empleado)
+  - 1 botón "Exportar" que cambia el action según formato via JS (`exportarFichajes()`)
+- Rutas: CSV → `ReportesHorario/exportarCSV` (ya existe), Excel → `ReportesHorario/exportarExcel` (nuevo), PDF → `ReportesHorario/exportarFichajesPDF` (nuevo)
+- **Archivo**: `app/views/reportesHorario/selectorReportes.php`
+
+#### Paso 4: Añadir métodos en `ReportesHorario.php`
+- **`exportarExcel()`**: Recibe `fechainicio`, `fechafin`, `idempleado` por GET. Obtiene datos con `obtenerFichajesParaCSV()`, registra auditoría, llama `ExportImportExcel::exportarFichajesExcel()` con cabeceras y filas
+- **`exportarFichajesPDF()`**: Recibe `fechainicio`, `fechafin`, `idempleado` por GET. Obtiene datos con `obtenerFichajesParaCSV()`, registra auditoría, llama `generarPdf::documentoPDFExportar()` con nueva plantilla `reporteFichajesExport.php`
+- **Archivo**: `app/controlers/ReportesHorario.php`
+
+#### Paso 5: Crear `reporteFichajesExport.php`
+- Plantilla PDF para fichajes exportados con:
+  - Título: "Listado de Fichajes" + rango de fechas + nombre de empleado (o "Todos los empleados")
+  - Tabla: Fecha/Hora, Empleado, Tipo, Observaciones
+  - Filas alternadas blanco/gris, font-size 10-11px (consistente con otros PDFs)
+  - Pie: fecha de generación + referencia RDL 8/2019
+- **Archivo**: `app/views/documentos/reporteFichajesExport.php`
+
+#### Paso 6: Permisos en BD
+- Añadidos `/ReportesHorario/exportarExcel` y `/ReportesHorario/exportarFichajesPDF` como permisos tipo `"link"` en `rolesbase.permisos` para admin (id=1)
+- Script temporal ejecutado y eliminado
+
+### Resumen de archivos creados/modificados (EXP-2)
+
+| # | Archivo | Acción |
+|---|---------|--------|
+| 1 | `public/composer.json` | Modificado: añadido `phpoffice/phpspreadsheet` |
+| 2 | `public/composer.lock` | Modificado: nuevas dependencias |
+| 3 | `public/vendor/` | Modificado: nuevos paquetes instalados por composer |
+| 4 | `app/librerias/ExportImportExcel.php` | Creado: clase wrapper PhpSpreadsheet |
+| 5 | `app/views/reportesHorario/selectorReportes.php` | Modificado: select formato + 1 botón Exportar + JS |
+| 6 | `app/controlers/ReportesHorario.php` | Modificado: añadidos `exportarExcel()` + `exportarFichajesPDF()` |
+| 7 | `app/views/documentos/reporteFichajesExport.php` | Creado: plantilla PDF para fichajes exportados |
+| 8 | BD `rolesbase.permisos` (id=1) | Modificado: añadidos permisos exportarExcel y exportarFichajesPDF |
+
+### Revisión pendiente: Diferencias entre los 3 reportes de exportación
+
+| Aspecto | Exportar Fichajes (CSV/Excel/PDF) | Reporte Mensual por Empleado (pantalla + PDF) | Reporte Global de Empresa (pantalla + PDF) |
+|---------|-----------------------------------|------------------------------------------------|----------------------------------------------|
+| **Datos** | Fichajes individuales | Jornadas resumidas por día | Resumen por empleado |
+| **Ámbito** | Rango de fechas libre (desde/hasta) | 1 mes, 1 empleado | 1 mes, todos los empleados |
+| **Filas** | 1 fila = 1 fichaje (entrada o salida) | 1 fila = 1 jornada | 1 fila = 1 empleado |
+| **Columnas** | Fecha/Hora, Empleado, Tipo, Observaciones | Fecha, Estado, Horas, Horas esp., Diferencia, Completada | Empleado, Días trabajados, Horas totales, Completadas, Incompletas, Horas esp., Diferencia |
+| **Empleado** | Todos o uno específico | Solo uno | Todos |
+| **Periodo** | Cualquier rango de fechas | Un mes específico | Un mes específico |
+| **Nivel de detalle** | Máximo (cada fichaje) | Medio (resumen diario) | Mínimo (resumen mensual por empleado) |
+
+**Pendiente de revisar**: Verificar si el usuario quiere añadir más columnas al Exportar Fichajes (por ejemplo: estado de jornada, corregido, id de jornada) o si el formato actual es suficiente.
+
+---
+
+## Cambios 2026-09-03
+
+### Bug CSS: Icono lupa no visible en botones violeta
+
+- **Problema**: En los botones `bg-violeta-oscuro text-white` de las vistas CHOVA, el icono SVG de la lupa (`fa-search`) no se veía porque tenía `color: #048bd3` (mismo azul que el fondo del botón). Solo era visible en hover porque el fondo cambiaba a `purple-800`.
+- **Solución**: Cambiado `color: #048bd3` a `color: currentColor` en `public/css/styles.css` línea 232. Ahora el icono hereda el color del padre: blanco en botones con `text-white`, y el color de texto habitual en otros contextos.
+- **Vistas afectadas**: `miCalendario.php`, `historialEmpleado.php`, `solicitarModificacion.php`, `calendarioJornadas.php`, `detalleEmpleado.php`, `listadoGlobal.php`
+- **Archivos**: `public/css/styles.css`
+
+### EXP-REV: Revisión de columnas del Exportar Fichajes — ✅ Cerrado
+
+- **Decisión**: Mantener las 4 columnas actuales (Fecha/Hora, Empleado, Tipo, Observaciones) sin añadir más. El formato actual es suficiente.
+
+### CLEANUP-1: Eliminar método `migrarConfigHorario()` — ✅ Completado
+
+- Eliminado el método temporal `migrarConfigHorario()` de `app/controlers/AdministracionHorario.php`
+- Este método ya se ejecutó una vez y era innecesario. Su acceso por URL era una superficie de ataque innecesaria.
+
+### CLEANUP-2: Eliminar vista `migrarResultado.php` — ✅ Completado
+
+- Eliminada `app/views/administracionHorario/migrarResultado.php`
+- Vista asociada al método `migrarConfigHorario()`, ya sin uso.
+
+### CLEANUP-7: Eliminar backup de librería — ✅ Completado
+
+- Eliminado `app/librerias/enviarEmail copy.php`
+
+### CLEANUP-9: Eliminar plantilla backup — ✅ Completado
+
+- Eliminado `public/documentos/plantillasCorreo/plantillaboton copy.php`
+
+### CLEANUP-10: Eliminar archivos temporales de la raíz — ✅ Completado
+
+- Eliminados: `temp_admin_perms.json`, `temp_admin_perms.txt`, `tmp_perms.txt`, `tmp_permisos.txt`, `test.txt`, `mysql_error.log`
+
+### CLEANUP-11: Eliminar archivos config backup — ✅ Completado
+
+- Eliminados: `app/config/admin_permisos_backup.txt`, `app/config/admin_permisos_raw.txt`, `app/config/tecnico_permisos_backup.txt`
+
+### CLEANUP-6 (parcial): Eliminar archivos backup de vistas
+
+- Eliminados: `app/controlers/ControlHorario.php.backup`, `app/views/controlHorario/solicitarModificacion.php.backup`, `app/views/incidencias/verHistorialTiempos copy.php`
+- Pendientes: `app/views/incidencias/verIncidencia copy.php`, `app/views/usuarios/usuarios copy.php`
+
+---
+
+## Cambios 2026-10-14 — Correo: instrumentación SMTP y fix teléfono
+
+### Instrumentación de envío de correos (diagnóstico Dinaserver) — ✅ Desplegado en producción
+
+- **Problema**: El CRM no envía correos con `info@instalacionestelesat.es` (Dinaserver); con Gmail de prueba funciona. Fallos silenciosos, sin log ni rastro.
+- **Solución**:
+  1. `app/config/configurar.php`: constante `SMTP_DEBUG_NIVEL` (0 = sin debug, 3 = transcripción SMTP completa)
+  2. `app/librerias/enviarEmail.php` (`enviarEmailDestinatario`): `SMTPDebug` + callback `Debugoutput` que captura la transcripción en `$GLOBALS['smtpDebugLog']` (nada en pantalla); registro en `app/logs/email_errors.log` al fallar `Send()` o en excepción. `enviarEmailDocumento()` (facturas/PDFs) queda SIN instrumentar
+  3. `app/controlers/Incidencias.php`: fix de destinatarios acumulados en `enviarEmailAcuseDeReciboCliente()` y `enviarEmailALosTecnicosAsignadosAlCliente()` (antes cada email incluía a los destinatarios anteriores, con enlaces personalizados cruzados)
+- **Verificación**: archivos local y copia producción idénticos (`fc`), `php -l` OK. Prueba real en producción: alta de técnico → AVISO visible + transcripción completa en `app/logs/email_errors.log`
+- **Documentación**: `docs/diagnostico_correo_telesat.md` (solo local)
+
+### Fix: teléfono vacío causaba 500 en alta/edición de técnico — ✅ Desplegado en producción
+
+- **Problema**: `usuarios.telefono` es INT y MySQL de producción va en modo estricto. Teléfono vacío (o con espacios/guiones) → `PDOException 1366` no capturada → HTTP 500 en `/Tecnicos/registrarTecnico`. En local no se reproducía (XAMPP no estricto convierte `''` → `0`).
+- **Solución**: en `ModeloTecnicos.php` (`insertarNuevaTecnico` y `actualizarDatosTecnico`): `$telefono = (int) preg_replace('/[^0-9]/', '', (string) $datos['telefono']);` — vacío/letras → 0, números formateados → solo dígitos.
+- **Archivos**: `app/models/ModeloTecnicos.php` (local + copia producción, idénticos verificados)
+
+### PENDIENTE: Respuesta de Dinaserver (SMTP AUTH rechaza credenciales) — 🔲
+
+- **Estado actual**: SMTP_DEBUG_NIVEL = 3 en producción (temporal). El envío con Dinaserver falla; el CRM funciona con Gmail de prueba.
+- **Evidencia** (2026-10-14 16:23, `email_errors.log` producción): conexión OK, STARTTLS OK, servidor acepta usuario pero rechaza contraseña (`535 5.7.8 authentication failed`). Mismo resultado desde local y desde el propio hosting → **descartada restricción de relay por IP**; el fallo es del lado del proveedor.
+- **Consulta enviada al proveedor**: ¿SMTP AUTH habilitado para la cuenta? ¿Credenciales SMTP = webmail? ¿Usuario en otro formato (solo `info`)?
+- **Al recibir respuesta**:
+  - [ ] Actualizar `PASSWORD_CORREO`/credenciales en `configurar.php` de producción
+  - [ ] Bajar `SMTP_DEBUG_NIVEL` de `3` a `0` en producción (el log de errores sigue activo igualmente)
+  - [ ] Re-test: alta de técnico → correo recibido sin AVISO
+- **Opcional mientras tanto**: probar `Username = info` (requiere separar usuario SMTP del remitente en `enviarEmail.php`). La instrumentación de `enviarEmailDocumento()` ya está completada (ver auditoría abajo). Resto del tema correo: cerrado, pendiente únicamente el aviso de Dinaserver.
+
+### Auditoría de envíos de correo (2026-10-14, post-fix duplicidad) — hallazgos y plan aprobado
+
+**Auditoría completa de todos los puntos de envío** (`enviarEmailDestinatario` + `enviarEmailDocumento`):
+
+**Duplicidad (acumulación de `$emailsDestino`) — veredicto:**
+- ✅ Corregidos y vivos: `Incidencias.php:726` y `:771` (acuse de recibo + técnicos asignados)
+- ✅ Sanos (declaración dentro del bucle o sin bucle): notificación admins (`Incidencias.php:646`, `:685`; `PresupuestosFacturas.php:154`, `:217`), valoración (`:1814`, single), reasignar (`:1902`), rechazo (`:2943`)
+- ✅ `enviarEmailDocumento()` NO afecta: sus 2 llamadores vivos (`FacturasCliente.php:1321` facturas, `Incidencias.php:3427` partes) usan `$_POST['inputEmailSelected']` (multi-select, un solo envío a todos los seleccionados, por diseño)
+- 🔴 Con el bug pero CÓDIGO MUERTO (sin llamadores, verificado en app/ + public/):
+  - `Incidencias.php:1709` `enviarEmailClienteConFinalizacionIncidencia()` — el "email de finalización al cliente" nunca se envía (método huérfano)
+  - `FacturasCliente.php:1207` `enviarEmailFactura1()` — huérfano (el JS usa `enviarEmailFactura`, otro método)
+
+**Plan — ✅ EJECUTADO y desplegado en producción (2026-10-14, sesión 2):**
+1. [x] Fix truthiness `if ($envio)` → `if ($envio === 1)` en `FacturasCliente.php:1323` e `Incidencias.php:3430` (`enviarEmailDocumentoPdf`): en excepción la librería devuelve string no vacío → mostraba "Correo enviado" y registraba en `emails_clientes_facturas` aunque falló
+2. [x] Instrumentar `enviarEmailDocumento()` en `app/librerias/enviarEmail.php`: `SMTPDebug = SMTP_DEBUG_NIVEL` + callback `Debugoutput` + logs con etiqueta propia `"ERROR/EXCEPCION ENVIO EMAIL DOCUMENTO"` en `email_errors.log` (antes un fallo de factura/parte no dejaba rastro)
+3. [x] Fix truthiness `if ($envioEmail)` → `=== 1` en `Login.php:219` (recuperación de contraseña reporta éxito en excepciones)
+4. [x] Decisión sobre los 2 métodos huérfanos con bug de acumulación: **dejarlos sin tocar** (decisión del usuario, 14/10/2026 — quedan documentados como código muerto arriba)
+
+Aplicado en local + copia producción. Verificado: `php -l` 8/8 sin errores; `fc` pares — controladores idénticos entre copias, `enviarEmail.php` difiere solo en comentarios legacy preexistentes (bloques `/*echo...*/` de la copia prod, respetados). Subido al hosting por el usuario. Prueba pendiente de hacer: envío de factura/parte con Dinaserver caído → entrada "ERROR ENVIO EMAIL DOCUMENTO" en `app/logs/email_errors.log`.

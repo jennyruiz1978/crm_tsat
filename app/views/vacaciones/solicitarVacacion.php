@@ -4,7 +4,7 @@
 
 <div class="w-full overflow-x-hidden border-t flex flex-col">
     <main class="w-full flex-grow p-4 md:p-6">
-        <h2 class="text-2xl font-semibold leading-tight mb-4">Solicitar Permiso</h2>
+        <h2 class="text-2xl font-semibold leading-tight mb-4">Solicitar Vacaciones / Baja / Permiso</h2>
 
         <?php if (isset($datos['errorSolapamiento'])): ?>
             <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">

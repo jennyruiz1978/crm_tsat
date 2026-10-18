@@ -5,7 +5,8 @@ class Tecnicos extends Controlador {
     public function __construct() {
         session_start();
         $this->controlPermisos();
-        $this->ModelTecnicos = $this->modelo('ModeloTecnicos');    
+        $this->ModelTecnicos = $this->modelo('ModeloTecnicos');  
+		$this->modeloUsuario = $this->modelo('Usuario');
     }
 
     public function index() {
@@ -185,6 +186,12 @@ class Tecnicos extends Controlador {
     public function registrarTecnico()
     {            
         if ($_POST['nombres'] && $_POST['apellidos'] && $_POST['email'] ) {   
+			
+			if ($this->modeloUsuario->existeCorreoActivo($_POST['email'])) {
+				$_SESSION['message'] = 'Ya existe un usuario activo con ese correo electrónico.';
+				redireccionar('/Tecnicos');
+				return;
+			}
             
             $idsClientes = [];
             if (isset($_POST['idcliente'])) {
@@ -230,13 +237,15 @@ class Tecnicos extends Controlador {
             ];
             
             $ins = $this->ModelTecnicos->insertarNuevaTecnico($datos);
-            
+                       
             if ($ins && $ins >0) {
-                $this->actualizarTecnicosPorCliente($datos,$ins);
-                $this->enviarEmailConfirmacionCreacionUsuario($_POST['email'],$ins,$_POST['contra']);
-                $_SESSION['message'] = 'Se ha registrado el técnico corréctamente.';
-            }else{
-                $_SESSION['message'] = 'Ha ocurrido un error. No se puede registrar el técnico porque falta completar datos en el formulario.';
+                $this->actualizarTecnicosPorCliente($datos, $ins);
+                $resultadoEmail = $this->enviarEmailConfirmacionCreacionUsuario($_POST['email'], $ins, $_POST['contra']);
+                if ($resultadoEmail === 1) {
+                    $_SESSION['message'] = 'Se ha registrado el técnico corréctamente.';
+                } else {
+                    $_SESSION['message'] = 'AVISO: Se ha registrado el técnico, pero el correo de confirmación no se ha podido enviar. Consulte con el administrador.';
+                }
             }
 
         }else{
@@ -249,9 +258,9 @@ class Tecnicos extends Controlador {
     public function enviarEmailConfirmacionCreacionUsuario($email,$idsUsuario,$pass)
     {
         //contruyo array con datos de envío:
-        $nombreRemitente = 'InfoMalaga';
+        $nombreRemitente = 'Telesat';
         $emailRemitente = CUENTA_CORREO;
-        $asunto = "Creación de usuario InfoMalaga";
+        $asunto = "Creación de usuario Telesat";
         $emailsDestino = [$email];
         $plantilla = $this->doCurl(RUTA_URL."/public/documentos/plantillasCorreo/plantillabotonContrasenia.php");
 
@@ -270,7 +279,7 @@ class Tecnicos extends Controlador {
 
         $tipoDoc = '';
         $attachment = '';
-        enviarEmail::enviarEmailDestinatario($nombreRemitente, $emailRemitente, $emailsDestino, $asunto, $message, $attachment, $tipoDoc);
+        return enviarEmail::enviarEmailDestinatario($nombreRemitente, $emailRemitente, $emailsDestino, $asunto, $message, $attachment, $tipoDoc);
 
     }
 
@@ -304,6 +313,12 @@ class Tecnicos extends Controlador {
 
         if ($_POST['id'] && $_POST['nombres'] && $_POST['apellidos'] && $_POST['email'] ) {
             
+			if ($this->modeloUsuario->existeCorreoActivo($_POST['email'], $_POST['id'])) {
+				$_SESSION['message'] = 'Ya existe un usuario activo con ese correo electrónico.';
+				redireccionar('/Tecnicos');
+				return;
+			}
+			
             $editarTiempo = 0;
             if (isset($_POST['editarTiempo']) && $_POST['editarTiempo'] ==1) {
                 $editarTiempo = $_POST['editarTiempo'];
@@ -361,6 +376,7 @@ class Tecnicos extends Controlador {
             
             $del = $this->ModelTecnicos->eliminarTecnicoByIdTecnico($_POST['idTecnico']);
             if ($del) {
+                $this->ModelTecnicos->quitarTecnicoDeClientes($_POST['idTecnico']);
                 $_SESSION['message'] = 'Se ha eliminado el registro corréctamente.';
             }else{
                 $_SESSION['message'] = 'Ha ocurrido un error. No se puede eliminar el registro.';

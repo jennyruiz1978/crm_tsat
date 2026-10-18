@@ -9,7 +9,7 @@
                 Reporte Mensual: <?php echo $datos['empleado']->nombre . ' ' . $datos['empleado']->apellidos; ?>
             </h2>
             <div class="flex gap-2">
-                <a href="<?php echo RUTA_URL; ?>/ReportesHorario/reportePDFMensualEmpleado/<?php echo $datos['idEmpleado']; ?>?mes=<?php echo $datos['mes']; ?>&anio=<?php echo $datos['anio']; ?>" class="bg-red-600 text-white px-4 py-2 rounded text-sm hover:bg-red-700">
+                <a href="<?php echo RUTA_URL; ?>/ReportesHorario/reportePDFMensualEmpleado/<?php echo $datos['idEmpleado']; ?>?mes=<?php echo $datos['mes']; ?>&anio=<?php echo $datos['anio']; ?>" target="_blank" class="bg-red-600 text-white px-4 py-2 rounded text-sm hover:bg-red-700">
                     <i class="fas fa-file-pdf mr-1"></i> Generar PDF
                 </a>
                 <a href="<?php echo RUTA_URL; ?>/ReportesHorario/generarReportes" class="bg-gray-500 text-white px-4 py-2 rounded text-sm hover:bg-gray-600">
@@ -36,6 +36,14 @@
                     <p class="text-2xl font-bold text-yellow-600"><?php echo $datos['jornadasIncompletas']; ?></p>
                     <p class="text-sm text-gray-600">Jornadas incompletas</p>
                 </div>
+                <div class="text-center p-3 bg-indigo-50 rounded">
+                    <p class="text-2xl font-bold text-indigo-600"><?php echo number_format($datos['horasEsperadas'], 2); ?>h</p>
+                    <p class="text-sm text-gray-600">Horas esperadas</p>
+                </div>
+                <div class="text-center p-3 bg-<?php echo $datos['diferencia'] >= 0 ? 'green' : 'red'; ?>-50 rounded">
+                    <p class="text-2xl font-bold text-<?php echo $datos['diferencia'] >= 0 ? 'green' : 'red'; ?>-600"><?php echo ($datos['diferencia'] >= 0 ? '+' : '') . number_format($datos['diferencia'], 2); ?>h</p>
+                    <p class="text-sm text-gray-600">Diferencia</p>
+                </div>
             </div>
         </div>
 
@@ -44,36 +52,44 @@
             <div class="overflow-x-auto">
                 <table class="min-w-full leading-normal">
                     <thead>
-                        <tr class="bg-violeta-oscuro text-white text-sm">
-                            <th class="px-4 py-3 text-left">Fecha</th>
-                            <th class="px-4 py-3 text-left">Estado</th>
-                            <th class="px-4 py-3 text-center">Horas</th>
-                            <th class="px-4 py-3 text-center">Completada</th>
-                            <th class="px-4 py-3 text-center">Fichajes</th>
-                        </tr>
+                            <tr class="bg-violeta-oscuro text-white text-sm">
+                                <th class="px-4 py-3 text-left">Fecha</th>
+                                <th class="px-4 py-3 text-left">Estado</th>
+                                <th class="px-4 py-3 text-center">Horas</th>
+                                <th class="px-4 py-3 text-center">Completada</th>
+                                <th class="px-4 py-3 text-center">Fichajes</th>
+                                <th class="px-4 py-3 text-center">Horas esp.</th>
+                                <th class="px-4 py-3 text-center">Diferencia</th>
+                            </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($datos['resumen'] as $jornada): ?>
-                            <tr class="border-b border-gray-200 hover:bg-gray-50 text-sm">
-                                <td class="px-4 py-3"><?php echo date('d/m/Y', strtotime($jornada->fecha)); ?></td>
-                                <td class="px-4 py-3">
-                                    <?php
-                                    $estados = [
-                                        'abierta' => '<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Abierta</span>',
-                                        'cerrada' => '<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Cerrada</span>',
-                                        'incompleta' => '<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Incompleta</span>',
-                                        'vacaciones' => '<span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">Vacaciones</span>',
-                                        'baja' => '<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">Baja</span>',
-                                        'ausencia' => '<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Ausencia</span>'
-                                    ];
-                                    echo $estados[$jornada->estadojornada] ?? $jornada->estadojornada;
-                                    ?>
-                                </td>
-                                <td class="px-4 py-3 text-center"><?php echo $jornada->horastotales; ?>h</td>
-                                <td class="px-4 py-3 text-center"><?php echo $jornada->completada ? '<i class="fas fa-check text-green-500"></i>' : '<i class="fas fa-times text-red-500"></i>'; ?></td>
-                                <td class="px-4 py-3 text-center"><?php echo $jornada->numerofichajes; ?></td>
-                            </tr>
-                        <?php endforeach; ?>
+                            <?php foreach ($datos['resumen'] as $jornada): ?>
+                                <?php $diferenciaJornada = $jornada->horastotales - $jornada->jornadatipohoras; ?>
+                                <tr class="border-b border-gray-200 hover:bg-gray-50 text-sm">
+                                    <td class="px-4 py-3"><?php echo date('d/m/Y', strtotime($jornada->fecha)); ?></td>
+                                    <td class="px-4 py-3">
+                                        <?php
+                                        $estados = [
+                                            'abierta' => '<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Abierta</span>',
+                                            'cerrada' => '<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Cerrada</span>',
+                                            'incompleta' => '<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Incompleta</span>',
+                                            'vacaciones' => '<span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">Vacaciones</span>',
+                                            'baja' => '<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">Baja</span>',
+                                            'ausencia' => '<span class="bg-pink-100 text-pink-800 text-xs px-2 py-1 rounded">Ausencia</span>',
+                                            'pendiente_vacaciones' => '<span class="bg-purple-50 text-purple-600 border border-purple-200 text-xs px-2 py-1 rounded">Vacaciones (pendiente)</span>',
+                                            'pendiente_baja' => '<span class="bg-red-50 text-red-600 border border-red-200 text-xs px-2 py-1 rounded">Baja (pendiente)</span>',
+                                            'pendiente_ausencia' => '<span class="bg-pink-50 text-pink-600 border border-pink-200 text-xs px-2 py-1 rounded">Ausencia (pendiente)</span>'
+                                        ];
+                                        echo $estados[$jornada->estadojornada] ?? $jornada->estadojornada;
+                                        ?>
+                                    </td>
+                                    <td class="px-4 py-3 text-center"><?php echo $jornada->horastotales; ?>h</td>
+                                    <td class="px-4 py-3 text-center"><?php echo $jornada->completada || in_array($jornada->estadojornada, ['vacaciones', 'baja', 'ausencia']) ? '<i class="fas fa-check text-green-500"></i>' : '<i class="fas fa-times text-red-500"></i>'; ?></td>
+                                    <td class="px-4 py-3 text-center"><?php echo $jornada->numerofichajes; ?></td>
+                                    <td class="px-4 py-3 text-center"><?php echo number_format($jornada->jornadatipohoras, 2); ?>h</td>
+                                    <td class="px-4 py-3 text-center <?php echo $diferenciaJornada >= 0 ? 'text-green-600' : 'text-red-600'; ?>"><?php echo ($diferenciaJornada >= 0 ? '+' : '') . number_format($diferenciaJornada, 2); ?>h</td>
+                                </tr>
+                            <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>

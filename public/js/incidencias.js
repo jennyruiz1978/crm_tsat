@@ -424,15 +424,11 @@ if(window.location.pathname.includes('/Incidencias')){
                             recargartablaAjax('contenedorListadoAdmin','listarTodasLasIncidencias');    
                         }
                                                 
+                        $('#bodyModalFinalizarIncidencia')[0].reset();
                         $('#idIncidenciaFin').val('');
-                        $('#solicitanteFin').val('');
-                        $('#clienteFin').val('');
-                        $('#sucursalFin').val('');
-                        $('#equipoFin').val('');
                         $('#tituloIdSolicitud').html('');
                         $('#msgFinalizarIncidencia').html('');
-                        $('#comentario').val('');
-                        $('#comentarioInterno').val('');
+                        $('#msgValidaFicheroFinalizar').html('');
 
                         cargarSolicitPorFacturarYPresptarYAceptadasYPptosDespuesCambiarEstado();
 

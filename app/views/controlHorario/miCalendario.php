@@ -71,7 +71,7 @@
                     ?>
                     <div class="border rounded p-1 min-h-16 <?php echo $esHoy ? 'border-blue-500 bg-blue-50' : 'border-gray-200'; ?>">
                         <div class="text-xs font-semibold <?php echo $esHoy ? 'text-blue-600' : 'text-gray-700'; ?>"><?php echo $d; ?></div>
-                        <?php if ($jornada): ?>
+                        <?php if ($jornada && !in_array($jornada->estadojornada, ['pendiente_vacaciones', 'pendiente_baja', 'pendiente_ausencia'])): ?>
                             <?php
                             $color = 'bg-gray-200 text-gray-600';
                             if ($jornada->estadojornada === 'cerrada') $color = 'bg-green-100 text-green-700';

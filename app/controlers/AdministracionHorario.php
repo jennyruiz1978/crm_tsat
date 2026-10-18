@@ -37,7 +37,7 @@ class AdministracionHorario extends Controlador
         $idEmpleado = isset($_GET['idempleado']) && $_GET['idempleado'] !== '' ? (int)$_GET['idempleado'] : null;
 
         $jornadas = $this->ModelControlHorario->obtenerTodasJornadasRangoFiltrado($fechaInicio, $fechaFin, $idEmpleado);
-        $empleados = $this->ModelControlHorario->obtenerEmpleadosQueFichan();
+        $empleados = $this->ModelControlHorario->obtenerEmpleadosNoClienteActivos();
         $solicitudesPendientes = $this->ModelSolicitudes->contarSolicitudesPendientes();
         $vacacionesPendientes = $this->ModelVacaciones->contarVacacionesPendientes();
 
@@ -327,10 +327,12 @@ class AdministracionHorario extends Controlador
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $idEmpleado = (int)$_POST['idempleado'];
             $debeFichar = isset($_POST['debeFichar']) ? 1 : 0;
-            $jornadaHoras = $_POST['jornadatipohoras'] ?? 8.00;
-            $horarioEntrada = $_POST['horarioentrada'] ?? null;
-            $horarioSalida = $_POST['horariosalida'] ?? null;
-            $tolerancia = $_POST['toleranciaminutos'] ?? 5;
+            $jornadaHoras = ($_POST['jornadatipohoras'] ?? '');
+            $jornadaHoras = ($jornadaHoras === '' || !is_numeric($jornadaHoras)) ? 8.00 : (float)$jornadaHoras;
+            $horarioEntrada = ($_POST['horarioentrada'] ?? '') ?: '09:00:00';
+            $horarioSalida = ($_POST['horariosalida'] ?? '') ?: '18:00:00';
+            $tolerancia = ($_POST['toleranciaminutos'] ?? '');
+            $tolerancia = ($tolerancia === '' || !is_numeric($tolerancia)) ? 5 : (int)$tolerancia;
 
             $configExistente = $this->ModelConfigHorario->obtenerConfigPorEmpleado($idEmpleado);
 
@@ -378,7 +380,7 @@ class AdministracionHorario extends Controlador
         $anio = isset($_GET['anio']) ? (int)$_GET['anio'] : (int)date('Y');
         $idEmpleado = isset($_GET['idempleado']) && $_GET['idempleado'] !== '' ? (int)$_GET['idempleado'] : null;
 
-        $empleados = $this->ModelControlHorario->obtenerEmpleadosQueFichan();
+        $empleados = $this->ModelControlHorario->obtenerEmpleadosNoClienteActivos();
 
         $fechaInicio = $anio . '-' . str_pad($mes, 2, '0', STR_PAD_LEFT) . '-01';
         $fechaFin = $anio . '-' . str_pad($mes, 2, '0', STR_PAD_LEFT) . '-' . cal_days_in_month(CAL_GREGORIAN, $mes, $anio);
@@ -412,39 +414,4 @@ class AdministracionHorario extends Controlador
         $this->vista('vacaciones/listadoVacaciones', $datos);
     }
 
-    public function migrarConfigHorario()
-    {
-        $modeloUsuarios = $this->modelo('Usuario');
-
-        $this->db = new Base;
-        $this->db->query("SELECT id, nombre, apellidos, rol FROM usuarios WHERE rol != 1 AND activo = 1 ORDER BY id");
-        $usuarios = $this->db->registros();
-
-        $creados = [];
-        $omitidos = [];
-
-        foreach ($usuarios as $usuario) {
-            $existente = $this->ModelConfigHorario->obtenerConfigPorEmpleado($usuario->id);
-            if ($existente) {
-                $omitidos[] = $usuario;
-            } else {
-                $datosConfig = [
-                    'idempleado' => $usuario->id,
-                    'debeFichar' => 0,
-                    'jornadatipohoras' => 8.00,
-                    'horarioentrada' => '09:00:00',
-                    'horariosalida' => '18:00:00',
-                    'toleranciaminutos' => 5
-                ];
-                $this->ModelConfigHorario->crearConfig($datosConfig);
-                $creados[] = $usuario;
-            }
-        }
-
-        $datos = [
-            'creados' => $creados,
-            'omitidos' => $omitidos
-        ];
-        $this->vista('administracionHorario/migrarResultado', $datos);
-    }
 }

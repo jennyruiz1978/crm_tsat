@@ -8,6 +8,8 @@ Este documento describe todos los pasos necesarios para migrar el módulo CHOVA 
 3. Configuración de permisos
 4. Limpieza completa si se necesita rollback
 
+**Estado del despliegue**: ✅ COMPLETADO en producción (septiembre 2026)
+
 ---
 
 ## 1. Tablas nuevas creadas por CHOVA (7 tablas)
@@ -22,9 +24,13 @@ Este documento describe todos los pasos necesarios para migrar el módulo CHOVA 
 | `configuracionhorario` | Configuración horaria por empleado (debeFichar, jornada, horarios) |
 | `auditoria` | Registro de auditoría de acciones CHOVA |
 
+✅ **Ejecutado en producción**
+
 ---
 
 ## 2. Script de creación de tablas (ejecutar en producción)
+
+✅ **Ejecutado en producción**. A continuación el SQL definitivo corregido:
 
 ```sql
 -- ============================================================
@@ -44,9 +50,9 @@ CREATE TABLE IF NOT EXISTS `jornadas` (
   `creadoen` timestamp NOT NULL DEFAULT current_timestamp(),
   `modificadoen` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_jornadas_empleado_fecha` (`idempleado`,`fecha`),
   KEY `idx_jornadas_empleado` (`idempleado`),
-  KEY `idx_jornadas_fecha` (`fecha`),
-  UNIQUE KEY `idx_jornadas_empleado_fecha` (`idempleado`, `fecha`)
+  KEY `idx_jornadas_fecha` (`fecha`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Tabla: fichajes
@@ -143,7 +149,7 @@ CREATE TABLE IF NOT EXISTS `configuracionhorario` (
   `jornadatipohoras` decimal(4,2) DEFAULT 8.00 COMMENT 'Horas de jornada estándar',
   `horarioentrada` time DEFAULT NULL COMMENT 'Hora teórica de entrada',
   `horariosalida` time DEFAULT NULL COMMENT 'Hora teórica de salida',
-  `toleranciaminutos` int(5) DEFAULT 10 COMMENT 'Minutos de tolerancia para retrasos',
+  `toleranciaminutos` int(5) DEFAULT 5 COMMENT 'Minutos de tolerancia para retrasos',
   `eliminado` tinyint(1) NOT NULL DEFAULT 0,
   `creadoen` timestamp NOT NULL DEFAULT current_timestamp(),
   `modificadoen` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
@@ -170,9 +176,18 @@ CREATE TABLE IF NOT EXISTS `auditoria` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
+### Notas sobre el SQL respecto a versiones anteriores
+
+| Cambio | Versión anterior | Versión corregida | Motivo |
+|--------|-----------------|-------------------|--------|
+| `jornadas.estadojornada` COMMENT | `'abierta, cerrada, incompleta, vacaciones, baja'` | `'abierta, cerrada, incompleta, vacaciones, baja, ausencia'` | Se añadió el estado "ausencia" |
+| `configuracionhorario.toleranciaminutos` DEFAULT | `10` | `5` | Se cambió de 10 a 5 minutos durante el desarrollo |
+| `solicitudesmodificacion.idjornadaoriginal` | No existía | Añadida como `int(10) NOT NULL DEFAULT 0` | Necesaria para corregir fichajes huérfanos |
+| `fichajes.corregido` | No existía | Añadida como `tinyint(1) NOT NULL DEFAULT 0` | Marca fichajes corregidos por solicitudes aprobadas |
+
 ---
 
-## 3. Datos iniciales — Configuración horario por rol
+## 3. Datos iniciales — Configuración horario
 
 ### Lógica de `debeFichar`
 
@@ -182,221 +197,52 @@ CREATE TABLE IF NOT EXISTS `auditoria` (
 
 ### Flujo de producción
 
-1. Ejecutar el INSERT (o el script de migración) para crear registros con `debeFichar=0`.
-2. El administrador decide quiénes deben fichar y los activa desde **Admin. Horario → Configuración**.
-3. Los usuarios nuevos creados desde el CRUD de Usuarios tienen su config creada automáticamente con `debeFichar=1` si su rol no es cliente.
+1. El administrador decide quiénes deben fichar y los activa manualmente desde **Admin. Horario → Configuración**.
+2. No se crea automáticamente el registro al crear usuarios. El admin gestiona `debeFichar` manualmente.
+3. Al editar un usuario cambiando su rol a cliente (rol=1) y si ya tiene config, se pone `debeFichar=0`.
 
-### Script INSERT para producción (ejecutar DESPUÉS de crear las tablas)
-
-```sql
--- ============================================================
--- DATOS INICIALES: Crear registros de configuración para usuarios existentes
--- ============================================================
--- Inserta un registro en configuracionhorario para cada usuario ACTIVO
--- que NO sea cliente (rol != 1), con debeFichar = 0 (inactivo).
--- El administrador activará manualmente quiénes deben fichar desde
--- Admin. Horario → Configuración.
--- Los clientes (rol=1) NO fichan y NO necesitan registro.
-
-INSERT INTO `configuracionhorario` (`idempleado`, `debeFichar`, `jornadatipohoras`, `horarioentrada`, `horariosalida`, `toleranciaminutos`)
-SELECT `id`, 0, 8.00, '09:00:00', '18:00:00', 10
-FROM `usuarios`
-WHERE `rol` IN (0, 2, 3) AND `activo` = 1;
-```
-
-**Alternativa**: Usar el método `migrarConfigHorario()` del controlador `AdministracionHorario` (ver sección 11).
-
-**NOTA**: Este INSERT solo se ejecuta UNA VEZ en la migración inicial. Después, el controlador `Usuarios.php` gestiona automáticamente la creación/actualización de registros al crear/editar usuarios.
+**NOTA**: No se ejecuta un INSERT masivo. Los registros se crean manualmente desde la UI de Configuración Horario, donde los usuarios sin config ya aparecen con valores por defecto (COALESCE).
 
 ---
 
 ## 4. Creación del rol visitante (si no existe)
 
+✅ **Ejecutado en producción**:
+
 ```sql
--- Verificar si el rol visitante existe antes de insertar
 INSERT INTO `rolesbase` (`id`, `rol`, `nombre`, `permisos`)
 SELECT 4, 3, 'visitante', '{}'
 FROM DUAL
-WHERE NOT EXISTS (SELECT 1 FROM `rolesbase` WHERE `id` = 4);
+WHERE NOT EXISTS (SELECT 1 FROM `rolesbase` WHERE `id = 4`);
 ```
-
-IMPORTANTE: El campo `permisos` se actualiza en el paso 5 con el JSON completo.
 
 ---
 
 ## 5. Permisos CHOVA en rolesbase
 
-Los permisos CHOVA deben añadirse al JSON existente en el campo `permisos` de `rolesbase` para los roles admin (id=1), tecnico (id=3) y visitante (id=4). El rol cliente (id=2) no tiene acceso CHOVA.
+✅ **Ejecutado en producción** mediante copia de la tabla `rolesbase` desde la BD local (`crm_telesat`) a producción (`crm_telesat_prod`) usando HeidiSQL.
 
-**OJO**: Estos JSONs deben fusionarse con los permisos EXISTENTES del CRM, no reemplazarlos. La forma más segura es ejecutar el script PHP de actualización.
+### Resultado verificado
 
-### Script PHP para actualizar permisos (ejecutar una vez y eliminar)
+| Rol | Antes (prod) | Después (prod) |
+|-----|-------------|----------------|
+| Admin (id=1) | 4 bloques (Dashboard, Incidencias, Facturas, Ajustes) | 7 bloques (+ ControlHorario, AdministracionHorario, ReportesHorario) |
+| Cliente (id=2) | 2 bloques (Dashboard, Incidencias) | 2 bloques (sin cambios) |
+| Técnico (id=3) | 2 bloques (Incidencias, Ajustes) | 3 bloques (+ ControlHorario) |
+| Visitante (id=4) | `{}` (vacío) | 1 bloque (ControlHorario) |
 
-Crear archivo temporal `app/config/update_permisos_chova_prod.php`:
+Los bloques no-CHOVA (Dashboard, Incidencias, Facturas, Ajustes) son idénticos entre local y producción (verificado con MD5). Solo se añadieron los bloques CHOVA.
 
-```php
-<?php
-// Script temporal para actualizar permisos CHOVA en producción
-// EJECUTAR UNA VEZ Y LUEGO ELIMINAR ESTE ARCHIVO
+### Estructura de permisos CHOVA (referencia)
 
-require_once __DIR__ . '/configurar.php';
+**Admin (id=1)**: ControlHorario + AdministracionHorario + ReportesHorario
+**Técnico (id=3)**: ControlHorario
+**Visitante (id=4)**: ControlHorario
 
-// Obtener permisos actuales de rolesbase
-$db = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NOMBRE, DB_USER, DB_PASS);
-$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-// Permisos CHOVA para ADMIN (rol=0, id=1)
-$permisosChovaAdmin = [
-    "Mi Control Horario" => [
-        "/ControlHorario", "fas fa-clock", "Mi Control Horario",
-        [
-            ["/ControlHorario/fichar", "Fichar", []],
-            ["/ControlHorario/registrarFichaje", "link", []],
-            ["/ControlHorario/obtenerEstadoActual", "link", []],
-            ["/ControlHorario/miHistorial", "Mi Historial", []],
-            ["/ControlHorario/misSolicitudes", "Mis Solicitudes", []],
-            ["/ControlHorario/solicitarModificacion", "link", []],
-            ["/ControlHorario/detalleJornada", "link", []],
-            ["/ControlHorario/miCalendario", "Mi Calendario", []]
-        ]
-    ],
-    "AdministracionHorario" => [
-        "/AdministracionHorario", "fas fa-user-clock", "Admin. Horario",
-        [
-            ["/AdministracionHorario/listadoGlobal", "Listado Global", []],
-            ["/AdministracionHorario/calendarioJornadas", "Calendario Jornadas", []],
-            ["/AdministracionHorario/solicitudesModificacion", "Solicitudes Mod.", []],
-            ["/AdministracionHorario/configuracionHorario", "Configuracion", []],
-            ["/AdministracionHorario/detalleEmpleado", "link", []],
-            ["/AdministracionHorario/resolverSolicitud", "link", []],
-            ["/AdministracionHorario/aprobarSolicitud", "link", []],
-            ["/AdministracionHorario/rechazarSolicitud", "link", []],
-            ["/AdministracionHorario/listadoVacaciones", "Permisos Global", []],
-            ["/AdministracionHorario/resolverVacacion", "link", []],
-            ["/AdministracionHorario/aprobarVacacion", "link", []],
-            ["/AdministracionHorario/rechazarVacacion", "link", []],
-            ["/AdministracionHorario/cancelarVacacion", "link", []],
-            ["/AdministracionHorario/aplicarSolicitudAprobada", "link", []]
-        ]
-    ],
-    "Mis Permisos" => [
-        "/Vacaciones", "fas fa-umbrella-beach", "Mis Permisos",
-        [
-            ["/Vacaciones/solicitarVacacion", "Solicitar Permiso", []],
-            ["/Vacaciones/misVacaciones", "Mis Permisos", []],
-            ["/Vacaciones", "link", []],
-            ["/Vacaciones/subirJustificante", "link", []]
-        ]
-    ],
-    "ReportesHorario" => [
-        "/ReportesHorario", "fas fa-file-alt", "Reportes Horario",
-        [
-            ["/ReportesHorario/generarReportes", "Generar Reportes", []],
-            ["/ReportesHorario/reportePDFMensualEmpleado", "link", []],
-            ["/ReportesHorario/reportePDFGlobalEmpresa", "link", []],
-            ["/ReportesHorario/reporteCSVFichajes", "link", []],
-            ["/ReportesHorario/reporteMensualEmpleado", "link", []],
-            ["/ReportesHorario/reporteGlobalEmpresa", "link", []]
-        ]
-    ]
-];
-
-// Permisos CHOVA para TECNICO (rol=2, id=3)
-$permisosChovaTecnico = [
-    "Mi Control Horario" => [
-        "/ControlHorario", "fas fa-clock", "Mi Control Horario",
-        [
-            ["/ControlHorario/fichar", "Fichar", []],
-            ["/ControlHorario/registrarFichaje", "link", []],
-            ["/ControlHorario/obtenerEstadoActual", "link", []],
-            ["/ControlHorario/miHistorial", "Mi Historial", []],
-            ["/ControlHorario/misSolicitudes", "Mis Solicitudes", []],
-            ["/ControlHorario/solicitarModificacion", "link", []],
-            ["/ControlHorario/detalleJornada", "link", []],
-            ["/ControlHorario/miCalendario", "Mi Calendario", []]
-        ]
-    ],
-    "Mis Permisos" => [
-        "/Vacaciones", "fas fa-umbrella-beach", "Mis Permisos",
-        [
-            ["/Vacaciones/solicitarVacacion", "Solicitar Permiso", []],
-            ["/Vacaciones/misVacaciones", "Mis Permisos", []],
-            ["/Vacaciones", "link", []],
-            ["/Vacaciones/subirJustificante", "link", []]
-        ]
-    ]
-];
-
-// Permisos CHOVA para VISITANTE (rol=3, id=4)
-$permisosChovaVisitante = [
-    "Mi Control Horario" => [
-        "/ControlHorario", "fas fa-clock", "Mi Control Horario",
-        [
-            ["/ControlHorario/fichar", "Fichar", []],
-            ["/ControlHorario/registrarFichaje", "link", []],
-            ["/ControlHorario/obtenerEstadoActual", "link", []],
-            ["/ControlHorario/miHistorial", "Mi Historial", []],
-            ["/ControlHorario/misSolicitudes", "Mis Solicitudes", []],
-            ["/ControlHorario/solicitarModificacion", "link", []],
-            ["/ControlHorario/detalleJornada", "link", []],
-            ["/ControlHorario/miCalendario", "Mi Calendario", []]
-        ]
-    ],
-    "Mis Permisos" => [
-        "/Vacaciones", "fas fa-umbrella-beach", "Mis Permisos",
-        [
-            ["/Vacaciones/solicitarVacacion", "Solicitar Permiso", []],
-            ["/Vacaciones/misVacaciones", "Mis Permisos", []],
-            ["/Vacaciones", "link", []],
-            ["/Vacaciones/subirJustificante", "link", []]
-        ]
-    ]
-];
-
-// Función para fusionar permisos CHOVA con permisos existentes
-function fusionarPermisosChova($permisosExistentesJson, $permisosChova) {
-    $permisos = json_decode($permisosExistentesJson, true);
-    if (!is_array($permisos)) {
-        $permisos = [];
-    }
-    foreach ($permisosChova as $key => $value) {
-        $permisos[$key] = $value;
-    }
-    return json_encode($permisos, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-}
-
-// Actualizar admin (id=1)
-$stmt = $db->query("SELECT permisos FROM rolesbase WHERE id = 1");
-$row = $stmt->fetch(PDO::FETCH_ASSOC);
-$nuevosPermisos = fusionarPermisosChova($row['permisos'], $permisosChovaAdmin);
-$stmt = $db->prepare("UPDATE rolesbase SET permisos = ? WHERE id = 1");
-$stmt->execute([$nuevosPermisos]);
-echo "Permisos admin actualizados.\n";
-
-// Actualizar tecnico (id=3)
-$stmt = $db->query("SELECT permisos FROM rolesbase WHERE id = 3");
-$row = $stmt->fetch(PDO::FETCH_ASSOC);
-$nuevosPermisos = fusionarPermisosChova($row['permisos'], $permisosChovaTecnico);
-$stmt = $db->prepare("UPDATE rolesbase SET permisos = ? WHERE id = 3");
-$stmt->execute([$nuevosPermisos]);
-echo "Permisos tecnico actualizados.\n";
-
-// Actualizar visitante (id=4)
-$stmt = $db->query("SELECT permisos FROM rolesbase WHERE id = 4");
-$row = $stmt->fetch(PDO::FETCH_ASSOC);
-$nuevosPermisos = fusionarPermisosChova($row['permisos'], $permisosChovaVisitante);
-$stmt = $db->prepare("UPDATE rolesbase SET permisos = ? WHERE id = 4");
-$stmt->execute([$nuevosPermisos]);
-echo "Permisos visitante actualizados.\n";
-
-echo "\n¡Permisos CHOVA actualizados correctamente!\n";
-echo "ELIMINE ESTE ARCHIVO DESPUÉS DE EJECUTARLO.\n";
-```
-
-**Instrucciones**: 
-1. Subir el archivo a `app/config/update_permisos_chova_prod.php`
-2. Ejecutar desde CLI: `php app/config/update_permisos_chova_prod.php`
-3. **ELIMINAR el archivo inmediatamente después**
+La estructura de permisos CHOVA en la BD tiene las siguientes particularidades:
+- **Vacaciones está anidado dentro de ControlHorario** como sub-item (no es un bloque separado)
+- **AdministracionHorario** tiene sub-items anidados con links AJAX
+- **ReportesHorario** tiene sub-items anidados con links AJAX
 
 ---
 
@@ -404,21 +250,14 @@ echo "ELIMINE ESTE ARCHIVO DESPUÉS DE EJECUTARLO.\n";
 
 ### 6.1. Tabla `rolesbase` (MODIFICADA)
 
-- **Campo `permisos`**: Se añadió el JSON de permisos CHOVA a los roles admin (id=1), tecnico (id=3) y visitante (id=4).
-- **Nuevo registro**: Rol visitante (id=4, rol=3, nombre='visitante') creado por CHOVA.
+- **Campo `permisos`**: Se fusionaron los permisos CHOVA con los permisos existentes del CRM.
+- **Nuevo registro**: Rol visitante (id=4, rol=3, nombre='visitante').
 - **No se añadieron columnas nuevas** — solo se modificó el contenido del campo `permisos` existente.
 
 ### 6.2. Tabla `usuarios` (NO MODIFICADA en estructura)
 
 - No se añadieron columnas nuevas.
-- El controlador `Usuarios.php` fue modificado para gestionar `configuracionhorario` al crear/editar usuarios, pero no se alteró la estructura de la tabla.
-
-### 6.3. Tablas de backup creadas durante el desarrollo
-
-| Tabla | Contenido | Origen |
-|-------|-----------|--------|
-| `rolesbase_22_05_2026` | Backup original de rolesbase (3 roles: admin, cliente, tecnico) | Pre-CHOVA |
-| `rolesbase_28_05_2026` | Backup intermedio (4 roles: admin, cliente, tecnico, visitante, sin permisos CHOVA completos) | Desarrollo CHOVA |
+- El controlador `Usuarios.php` fue modificado para gestionar `configuracionhorario` al editar usuarios, pero no se alteró la estructura de la tabla.
 
 ---
 
@@ -456,22 +295,19 @@ ALTER TABLE configuracionhorario AUTO_INCREMENT = 1;
 ALTER TABLE auditoria AUTO_INCREMENT = 1;
 
 -- 2. Restaurar rolesbase al estado anterior a CHOVA
---   (usando backup del 22/05/2026, que tiene 3 roles sin permisos CHOVA)
-UPDATE rolesbase rb
-INNER JOIN rolesbase_22_05_2026 b ON rb.id = b.id
-SET rb.permisos = b.permisos;
+-- Usar backup de rolesbase anterior a CHOVA si existe
 
--- Eliminar rol visitante (creado por CHOVA)
+-- 3. Eliminar rol visitante (creado por CHOVA)
 DELETE FROM rolesbase WHERE id = 4;
 
--- 3. Eliminar tablas backup
-DROP TABLE IF EXISTS rolesbase_22_05_2026;
-DROP TABLE IF EXISTS rolesbase_28_05_2026;
-```
-
-```powershell
-# 4. Eliminar archivos subidos (justificantes)
-Remove-Item "C:\xampp\htdocs\crm_tsat\public\documentos\Vacaciones\*" -Recurse -Force
+-- 4. Eliminar tablas CHOVA (solo si se quiere eliminar completamente)
+-- DROP TABLE IF EXISTS fichajesmodificados;
+-- DROP TABLE IF EXISTS solicitudesmodificacion;
+-- DROP TABLE IF EXISTS fichajes;
+-- DROP TABLE IF EXISTS jornadas;
+-- DROP TABLE IF EXISTS vacaciones;
+-- DROP TABLE IF EXISTS configuracionhorario;
+-- DROP TABLE IF EXISTS auditoria;
 ```
 
 ---
@@ -481,10 +317,6 @@ Remove-Item "C:\xampp\htdocs\crm_tsat\public\documentos\Vacaciones\*" -Recurse -
 Para limpiar solo los datos de prueba pero mantener las tablas y la estructura para empezar limpio en producción:
 
 ```sql
--- ============================================================
--- LIMPIEZA DE DATOS: Mantener estructura, borrar datos de prueba
--- ============================================================
-
 SET FOREIGN_KEY_CHECKS = 0;
 
 TRUNCATE TABLE fichajesmodificados;
@@ -496,7 +328,6 @@ TRUNCATE TABLE auditoria;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
--- Resetear AUTO_INCREMENT
 ALTER TABLE jornadas AUTO_INCREMENT = 1;
 ALTER TABLE fichajes AUTO_INCREMENT = 1;
 ALTER TABLE solicitudesmodificacion AUTO_INCREMENT = 1;
@@ -506,68 +337,77 @@ ALTER TABLE auditoria AUTO_INCREMENT = 1;
 
 -- NOTA: NO truncar configuracionhorario.
 -- Los registros de configuración son necesarios para que los usuarios puedan fichar.
--- Si se reinicializan, ejecutar el INSERT del paso 3.
-
--- Si se quiere reinicializar configuracionhorario también:
--- TRUNCATE TABLE configuracionhorario;
--- ALTER TABLE configuracionhorario AUTO_INCREMENT = 1;
--- Y luego ejecutar el INSERT del paso 3.
-```
-
-```powershell
-# Eliminar justificantes subidos
-Remove-Item "C:\xampp\htdocs\crm_tsat\public\documentos\Vacaciones\*" -Recurse -Force
+-- El admin los crea manualmente desde Admin. Horario → Configuración.
 ```
 
 ---
 
 ## 9. Checklist de migración a producción
 
-- [ ] Ejecutar script de creación de tablas (paso 2)
-- [ ] Crear rol visitante si no existe (paso 4)
-- [ ] Ejecutar INSERT de datos iniciales en configuracionhorario (paso 3) O usar método migrarConfigHorario (sección 11)
-- [ ] Subir y ejecutar script PHP de permisos CHOVA (paso 5) Y permiso de migración (sección 11)
-- [ ] Ejecutar migración de usuarios existentes desde Admin. Horario → migrarConfigHorario (sección 11)
-- [ ] Activar debeFichar para usuarios que deban fichar desde Admin. Horario → Configuración
-- [ ] Eliminar archivos temporales de migración (método, vista, permiso, script PHP)
-- [ ] Eliminar script PHP de permisos después de ejecutar
-- [ ] Crear directorio `public/documentos/Vacaciones/` si no existe
-- [ ] Verificar que los archivos PHP nuevos están en el servidor:
-  - [ ] `app/controlers/ControlHorario.php`
-  - [ ] `app/controlers/AdministracionHorario.php`
-  - [ ] `app/controlers/Vacaciones.php`
-  - [ ] `app/controlers/ReportesHorario.php`
-  - [ ] `app/controlers/Usuarios.php` (modificado)
-  - [ ] `app/controlers/Login.php` (modificado — añade `$_SESSION['debeFichar']`)
-  - [ ] `app/views/includes/menu-sidebar-desktop.php` (modificado — filtra CHOVA si debeFichar=0)
-  - [ ] `app/views/includes/menu-sidebar-mobile.php` (modificado — filtra CHOVA si debeFichar=0)
-  - [ ] `app/views/usuarios/altaUsuarios/altaUsuarios.php` (modificado — añadido rol Visitante)
-  - [ ] `app/views/usuarios/actualizarUsuarios/actualizarUsuarios.php` (modificado — opciones de rol)
-  - [ ] `app/views/administracionHorario/configuracionHorario.php` (modificado — rol Visitante)
-  - [ ] `app/models/ModeloControlHorario.php`
-  - [ ] `app/models/ModeloSolicitudesModificacion.php`
-  - [ ] `app/models/ModeloVacaciones.php`
-  - [ ] `app/models/ModeloConfiguracionHorario.php`
-  - [ ] `app/models/ModeloAuditoria.php`
-  - [ ] `app/models/ModeloReportesHorario.php`
-  - [ ] `app/helpers/ControlHorarioHelper.php`
-  - [ ] `app/librerias/Controlador.php` (modificado)
-  - [ ] `app/views/includes/controlPermisos.php` (modificado)
-  - [ ] `app/views/includes/sidebar-tailwind.php` (modificado)
-  - [ ] `app/views/includes/footer.php` (modificado)
-  - [ ] `public/js/controlHorarioFichar.js`
-  - [ ] `public/js/navbarAcciones.js` (modificado)
-  - [ ] `public/js/navbarSidebar/navbarSidebar.js` (modificado)
-  - [ ] Todas las vistas en `app/views/controlHorario/`
-  - [ ] Todas las vistas en `app/views/administracionHorario/`
-  - [ ] Todas las vistas en `app/views/vacaciones/`
-  - [ ] Todas las vistas en `app/views/reportesHorario/`
+- [x] Ejecutar script de creación de tablas (paso 2)
+- [x] Crear rol visitante si no existe (paso 4)
+- [ ] ~~Ejecutar INSERT de datos iniciales en configuracionhorario~~ → **Descartado**: el admin crea los configs manualmente desde la UI
+- [x] Copiar tabla rolesbase desde local a producción (permisos CHOVA fusionados) (paso 5)
+- [x] Activar `debeFichar` para usuarios que deban fichar desde Admin. Horario → Configuración
+- [x] Subir archivos PHP nuevos y modificados por FTP
+- [x] Crear directorio `public/documentos/Vacaciones/`
+- [x] Desbloquear acceso (MANTENIMIENTO = false en Login.php)
 - [ ] Verificar zona horaria de MySQL: `SELECT NOW();` debe coincidir con `date('Y-m-d H:i:s')` de PHP
-- [ ] Verificar que `configurar.php` usa el usuario `root` (con permisos completos)
+- [ ] Verificar que `configurar.php` usa las credenciales correctas de BD de producción
 - [ ] Probar fichaje de entrada y salida
 - [ ] Probar solicitar vacaciones
 - [ ] Probar login como visitante
 - [ ] Probar administración horario como admin
+
+### Archivos subidos a producción
+
+#### Archivos NUEVOS
+
+| # | Archivo |
+|---|---------|
+| 1 | `app/controlers/ControlHorario.php` |
+| 2 | `app/controlers/AdministracionHorario.php` |
+| 3 | `app/controlers/Vacaciones.php` |
+| 4 | `app/controlers/ReportesHorario.php` |
+| 5 | `app/models/ModeloControlHorario.php` |
+| 6 | `app/models/ModeloSolicitudesModificacion.php` |
+| 7 | `app/models/ModeloVacaciones.php` |
+| 8 | `app/models/ModeloConfiguracionHorario.php` |
+| 9 | `app/models/ModeloAuditoria.php` |
+| 10 | `app/models/ModeloReportesHorario.php` |
+| 11 | `app/helpers/ControlHorarioHelper.php` |
+| 12 | `app/librerias/ExportImportExcel.php` |
+| 13 | `public/js/controlHorarioFichar.js` |
+| 14-19 | `app/views/controlHorario/*.php` (6 archivos) |
+| 20-25 | `app/views/administracionHorario/*.php` (6 archivos) |
+| 26-30 | `app/views/vacaciones/*.php` (5 archivos) |
+| 31-33 | `app/views/reportesHorario/*.php` (3 archivos) |
+| 34 | `app/views/documentos/reporteFichajesExport.php` |
+| 35 | Directorio `public/vendor/phpoffice/` (PhpSpreadsheet) |
+
+#### Archivos MODIFICADOS
+
+| # | Archivo | Qué cambió |
+|---|---------|------------|
+| 36 | `app/controlers/Login.php` | `$_SESSION['debeFichar']` + MANTENIMIENTO |
+| 37 | `app/controlers/Usuarios.php` | `actualizarConfigHorarioSegunRol()` |
+| 38 | `app/librerias/Controlador.php` | `controlPermisos()` con match parcial (strpos) |
+| 39 | `app/views/includes/controlPermisos.php` | Mismo cambio que Controlador.php |
+| 40 | `app/views/includes/menu-sidebar-desktop.php` | Filtro `debeFichar`, sidebar reorganizado |
+| 41 | `app/views/includes/menu-sidebar-mobile.php` | Filtro `debeFichar`, sidebar reorganizado |
+| 42 | `app/views/includes/footer.php` | JS de controlHorarioFichar |
+| 43 | `app/views/includes/sidebar-tailwind.php` | Cambios en sidebar |
+| 44 | `app/views/usuarios/altaUsuarios/altaUsuarios.php` | Rol Visitante en select |
+| 45 | `app/views/usuarios/actualizarUsuarios/actualizarUsuarios.php` | Select de rol dinámico |
+| 46 | `app/views/documentos/reporteHorarioEmpleado.php` | Tabla de jornadas resumidas |
+| 47 | `app/views/documentos/reporteHorarioGlobal.php` | Portrait, horas esp./diferencia |
+| 48 | `public/js/navbarAcciones.js` | Guard isAdminOTecnico |
+| 49 | `public/js/navbarSidebar/navbarSidebar.js` | Guard if(profileBtn) |
+| 50 | `public/css/styles.css` | Fix icono lupa (currentColor) |
+| 51 | `public/composer.json` | Añadido phpoffice/phpspreadsheet |
+| 52 | `public/composer.lock` | Actualizado |
+| 53 | `public/vendor/autoload.php` | Actualizado |
+| 54 | `public/vendor/composer/` | Actualizado |
 
 ---
 
@@ -577,7 +417,7 @@ Remove-Item "C:\xampp\htdocs\crm_tsat\public\documentos\Vacaciones\*" -Recurse -
 
 2. **Directorio de justificantes**: Crear `public/documentos/Vacaciones/` con permisos de escritura para el servidor web.
 
-3. **Usuarios existentes sin config**: Si hay usuarios activos con rol != 1 que ya existían antes de la migración, el INSERT del paso 3 cubre todos. Los nuevos usuarios creados después serán gestionados automáticamente por `Usuarios.php`.
+3. **Usuarios existentes sin config**: No se crea automáticamente el registro en `configuracionhorario`. El admin gestiona `debeFichar` manualmente desde Administración Horario → Configuración. Los usuarios sin config aparecen en la vista con valores por defecto (COALESCE).
 
 4. **Soft delete**: Las tablas CHOVA usan `eliminado=1` para borrado lógico. NUNCA hacer DELETE físico en estas tablas.
 
@@ -585,146 +425,52 @@ Remove-Item "C:\xampp\htdocs\crm_tsat\public\documentos\Vacaciones\*" -Recurse -
 
 6. **Rol visitante**: El rol visitante (id=4, rol=3) es nuevo. Debe existir en `rolesbase` antes de que ningún usuario con `rol=3` pueda usar el sistema.
 
-7. **Integración Usuarios ↔ Config Horario**: Al crear un usuario no-cliente, se crea automáticamente su config. Al editar un usuario cambiando su rol, se ajusta `debeFichar`. Esto está protegido con `try-catch` para que no afecte al CRUD de usuarios si algo falla.
+7. **Integración Usuarios ↔ Config Horario**: Al crear un usuario, NO se crea automáticamente su config. Al editar un usuario cambiando su rol a cliente (rol=1), si ya tiene config, se pone `debeFichar=0`. El admin gestiona el resto manualmente.
 
-8. **Restricción de acceso CHOVA por `debeFichar`**: Si un usuario tiene `debeFichar=0` en `configuracionhorario`, o no tiene registro en esa tabla, no puede acceder al módulo CHOVA (ControlHorario y Vacaciones). Los menús se ocultan del sidebar y el acceso por URL redirige a `/Inicio`. Esto se controla mediante `$_SESSION['debeFichar']` que se establece al login. Los módulos de administración (AdministracionHorario, ReportesHorario) no se ven afectados por esta restricción.
+8. **Restricción de acceso CHOVA por `debeFichar`**: Si un usuario tiene `debeFichar=0` en `configuracionhorario`, o no tiene registro, no puede acceder al módulo CHOVA. Los menús se ocultan del sidebar y el acceso por URL redirige a `/Inicio`. Esto se controla mediante `$_SESSION['debeFichar']` que se establece al login. Los módulos de administración (AdministracionHorario, ReportesHorario) no se ven afectados por esta restricción.
 
-9. **Formularios de Usuarios**: El alta de usuarios ahora incluye la opción "Visitante" (rol=3) en el select de rol. La edición de usuario muestra Admin, Cliente y Visitante (mantiene Técnico si el usuario ya lo es). La vista de Configuración Horario ahora muestra correctamente "Visitante" en la columna Rol.
+9. **Formularios de Usuarios**: El alta de usuarios incluye la opción "Visitante" (rol=3) en el select de rol. La edición muestra Admin, Cliente y Visitante (mantiene Técnico si el usuario ya lo es). La vista de Configuración Horario muestra correctamente "Visitante" en la columna Rol.
+
+10. **Mantenimiento**: El archivo `Login.php` contiene `define('MANTENIMIENTO', false);` en la línea 3. Para bloquear el acceso, cambiar a `true`. Para desbloquear, cambiar a `false`.
 
 ---
 
-## 11. Migración de usuarios existentes a configuracionhorario
+## 11. Migración de usuarios existentes — ELIMINADO
 
-En producción, es probable que existan usuarios (admin, técnicos, visitantes) que NO tengan registro en `configuracionhorario`. Este script crea los registros necesarios con `debeFichar=0` (inactivo) para que luego el administrador decida quiénes deben fichar.
+**Sección eliminada**. El método `migrarConfigHorario()`, la vista `migrarResultado.php` y el permiso `/AdministracionHorario/migrarConfigHorario` ya no existen en el código.
 
-### Script PHP temporal: `add_permiso_migracion.php`
+El admin crea los registros de `configuracionhorario` manualmente desde **Admin. Horario → Configuración** para cada usuario que deba fichar. Los usuarios sin config aparecen en la vista con valores por defecto gracias a COALESCE.
 
-Crear archivo `add_permiso_migracion.php` en la raíz del proyecto:
+### Valores por defecto en la vista de Configuración Horario (sin registro en BD)
 
-```php
-<?php
-// Script temporal para añadir permiso de migrarConfigHorario al admin (rol id=1)
-// EJECUTAR UNA VEZ Y LUEGO ELIMINAR ESTE ARCHIVO
+| Campo | Valor por defecto (COALESCE) |
+|-------|-------------------------------|
+| `debeFichar` | 0 (no ficha) |
+| `jornadatipohoras` | 8.00 |
+| `horarioentrada` | 09:00:00 |
+| `horariosalida` | 18:00:00 |
+| `toleranciaminutos` | 5 |
 
-require_once __DIR__ . '/app/config/configurar.php';
+---
 
-try {
-    $pdo = new PDO("mysql:host=localhost:3307;dbname=crm_telesat", DB_USUARIO, DB_PASSWORD);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+## Limpieza pendiente en local (archivos backup)
 
-    $stmt = $pdo->query("SELECT permisos FROM rolesbase WHERE id = 1");
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    $permisos = json_decode($row['permisos'], true);
+Los siguientes archivos existen en local pero NO deben subirse a producción:
 
-    if (!$permisos) {
-        die("Error: No se pudieron decodificar los permisos del admin.\n");
-    }
-
-    $added = false;
-    if (isset($permisos['AdministracionHorario']) && is_array($permisos['AdministracionHorario'])) {
-        if (isset($permisos['AdministracionHorario'][3]) && is_array($permisos['AdministracionHorario'][3])) {
-            $permisos['AdministracionHorario'][3][] = ["/AdministracionHorario/migrarConfigHorario", "link"];
-            $added = true;
-        }
-    }
-
-    if (!$added) {
-        die("Error: No se encontró el bloque AdministracionHorario en los permisos del admin.\n");
-    }
-
-    $nuevosPermisos = json_encode($permisos, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    $stmt = $pdo->prepare("UPDATE rolesbase SET permisos = :permisos WHERE id = 1");
-    $stmt->execute([':permisos' => $nuevosPermisos]);
-
-    echo "Permiso /AdministracionHorario/migrarConfigHorario añadido correctamente al admin (id=1).\n";
-    echo "ELIMINE ESTE ARCHIVO INMEDIATAMENTE.\n";
-
-} catch (PDOException $e) {
-    die("Error de BD: " . $e->getMessage() . "\n");
-}
-```
-
-### Pasos para ejecutar la migración
-
-1. **Subir archivos al servidor**:
-   - `add_permiso_migracion.php` en la raíz del proyecto
-   - `app/views/administracionHorario/migrarResultado.php` (vista del resultado)
-
-2. **Añadir el método temporal** en `app/controlers/AdministracionHorario.php`:
-
-```php
-public function migrarConfigHorario()
-{
-    $this->db = new Base;
-    $this->db->query("SELECT id, nombre, apellidos, rol FROM usuarios WHERE rol != 1 AND activo = 1 ORDER BY id");
-    $usuarios = $this->db->registros();
-
-    $creados = [];
-    $omitidos = [];
-
-    foreach ($usuarios as $usuario) {
-        $existente = $this->ModelConfigHorario->obtenerConfigPorEmpleado($usuario->id);
-        if ($existente) {
-            $omitidos[] = $usuario;
-        } else {
-            $datosConfig = [
-                'idempleado' => $usuario->id,
-                'debeFichar' => 0,
-                'jornadatipohoras' => 8.00,
-                'horarioentrada' => '09:00:00',
-                'horariosalida' => '18:00:00',
-                'toleranciaminutos' => 10
-            ];
-            $this->ModelConfigHorario->crearConfig($datosConfig);
-            $creados[] = $usuario;
-        }
-    }
-
-    $datos = [
-        'creados' => $creados,
-        'omitidos' => $omitidos
-    ];
-    $this->vista('administracionHorario/migrarResultado', $datos);
-}
-```
-
-3. **Ejecutar el script de permisos** desde CLI:
-   ```
-   php add_permiso_migracion.php
-   ```
-   Esto añade `/AdministracionHorario/migrarConfigHorario` a los permisos del admin.
-
-4. **Cerrar sesión y volver a logar** como admin (para refrescar permisos en sesión).
-
-5. **Ejecutar la migración** desde el navegador:
-   ```
-   http://localhost:8080/crm_tsat/AdministracionHorario/migrarConfigHorario
-   ```
-   Se mostrará una página con los usuarios creados y los omitidos.
-
-6. **Activar debeFichar** para cada usuario que deba fichar desde Configuración de Horario.
-
-7. **ELIMINAR todo lo temporal**:
-   - Eliminar `add_permiso_migracion.php` de la raíz del proyecto
-   - Eliminar el método `migrarConfigHorario()` de `AdministracionHorario.php`
-   - Eliminar la vista `migrarResultado.php` de `app/views/administracionHorario/`
-   - Eliminar el permiso `/AdministracionHorario/migrarConfigHorario` de `rolesbase.permisos` del admin (id=1):
-     ```sql
-     -- Ejecutar tras eliminar el método y la vista:
-     -- Consultar permisos del admin, buscar y eliminar la entrada ["migrarConfigHorario","link"]
-     -- o ejecutar script similar que quite esa entrada del JSON
-     ```
-
-### Valores por defecto del INSERT
-
-| Campo | Valor | Motivo |
-|-------|-------|--------|
-| `debeFichar` | **0** | Inactivo por defecto. El admin activa manualmente quiénes deben fichar. |
-| `jornadatipohoras` | 8.00 | Jornada estándar de 8 horas |
-| `horarioentrada` | 09:00:00 | Hora de entrada estándar |
-| `horariosalida` | 18:00:00 | Hora de salida estándar |
-| `toleranciaminutos` | 10 | 10 minutos de tolerancia |
-
-### Nota importante
-
-Los usuarios creados DESPUÉS de esta migración se gestionan automáticamente por `Usuarios.php`: al crear un usuario no-cliente se crea el registro con `debeFichar=1`, y al editar el rol se ajusta `debeFichar`. Este script solo es necesario para usuarios que ya existían antes de la integración.
+| Archivo | Motivo |
+|---------|--------|
+| `app/controlers/Clientes copy.php` | Backup |
+| `app/controlers/Clientes1.php` | Backup |
+| `app/controlers/Clientes1xxx.php` | Backup |
+| `app/controlers/Clientes_prod_antes_del_23_02_2025.php` | Backup |
+| `app/controlers/FacturasClienteAntes.php` | Backup |
+| `app/controlers/Incidencias_correcc_ficheros.php` | Backup |
+| `app/controlers/Incidencias_prod_22_05_2026.php` | Backup |
+| `app/controlers/PresupuestosFacturas_prod.php` | Backup |
+| `app/controlers/Pruebas.php` | Controlador de pruebas |
+| `app/models/ModeloClientes copy.php` | Backup |
+| `app/models/ModeloClientes_prod_antes_del_23_02_2025.php` | Backup |
+| `app/models/ModeloFacturasClienteAntes.php` | Backup |
+| `app/views/incidencias/verIncidencia copy.php` | Backup |
+| `app/views/usuarios/usuarios copy.php` | Backup |
+| `app/views/pruebas/` | Directorio de pruebas |

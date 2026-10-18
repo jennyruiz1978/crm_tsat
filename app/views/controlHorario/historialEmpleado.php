@@ -65,7 +65,10 @@
                                             'incompleta' => '<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Incompleta</span>',
                                             'vacaciones' => '<span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">Vacaciones</span>',
                                             'baja' => '<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">Baja</span>',
-                                            'ausencia' => '<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Ausencia</span>'
+                                            'ausencia' => '<span class="bg-pink-100 text-pink-800 text-xs px-2 py-1 rounded">Ausencia</span>',
+                                            'pendiente_vacaciones' => '<span class="bg-purple-50 text-purple-600 border border-purple-200 text-xs px-2 py-1 rounded">Vacaciones (pendiente)</span>',
+                                            'pendiente_baja' => '<span class="bg-red-50 text-red-600 border border-red-200 text-xs px-2 py-1 rounded">Baja (pendiente)</span>',
+                                            'pendiente_ausencia' => '<span class="bg-pink-50 text-pink-600 border border-pink-200 text-xs px-2 py-1 rounded">Ausencia (pendiente)</span>'
                                         ];
                                         echo $estados[$jornada->estadojornada] ?? $jornada->estadojornada;
                                         ?>
