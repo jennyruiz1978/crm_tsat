@@ -1,0 +1,5 @@
+﻿# Configuracion sensible: nunca versionar
+/app/config/configurar.php
+/app/config/configurar_produccion.php
+/app/config/configurar_produccion2.php
+/app/config/configurar prod antes de factura nueva.php
